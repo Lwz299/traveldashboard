@@ -22,15 +22,16 @@ import {
 } from "../../utils/adminAnalyticsFromEvents"
 import { orgCardClassSubtle } from "../../lib/org-ui"
 import ChartBox from "./ChartBox"
+import {
+  CHART_GRID_ORG as GRID,
+  CHART_AXIS as AXIS,
+  CHART_REV_STROKE as REV_STROKE,
+  CHART_REV_FILL as REV_FILL,
+  CHART_TIX_STROKE as TIX_STROKE,
+  CHART_TIX_FILL as TIX_FILL,
+} from "./chartPalette"
 
 const MotionDiv = motion.div
-
-const GRID = "rgba(29, 78, 216, 0.14)"
-const AXIS = "#475569"
-const REV_STROKE = "#0f766e"
-const REV_FILL = "#14b8a6"
-const TIX_STROKE = "#1d4ed8"
-const TIX_FILL = "#60a5fa"
 
 /** ملخص منظمة طبيعي من normalizeOrganizationSummary */
 function orgSummaryToPlatformTotals(summary) {

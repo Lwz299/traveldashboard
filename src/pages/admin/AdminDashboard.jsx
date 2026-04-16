@@ -18,21 +18,13 @@ import {
   LineChart,
 } from "lucide-react"
 import { formatCountEn, formatMoneyEn } from "../../utils/formatEn"
+import { firstDefined } from "../../utils/firstDefined"
+import AdminKpiValue from "../../components/admin/AdminKpiValue"
 import OrganizationCharts from "../../components/charts/OrganizationCharts"
-import { useAdminChartData, AdminRevenueChart, AdminTicketsChart, AdminGrowthChart } from "../../components/charts/AdminTrendCharts"
+import { useAdminChartData } from "../../components/charts/useAdminChartData"
+import { AdminRevenueChart, AdminTicketsChart, AdminGrowthChart } from "../../components/charts/AdminTrendCharts"
 import { StaggerList, StaggerItem, MotionSection, MotionSurface, DashboardPageSkeleton } from "../../components/motion"
 import { getSuperAdminNotificationsDelivered } from "../../api/notifications"
-
-function firstDefined(obj, keys) {
-  if (!obj || typeof obj !== "object") return undefined
-  for (const k of keys) {
-    if (Object.prototype.hasOwnProperty.call(obj, k)) {
-      const v = obj[k]
-      if (v !== undefined && v !== null) return v
-    }
-  }
-  return undefined
-}
 
 const kpiKeys = {
   events: ["totalEvents", "TotalEvents", "eventsCount", "EventsCount"],
@@ -96,12 +88,6 @@ export default function AdminDashboard() {
   const avgRevenuePerOrg = Number(orgsValue) > 0 ? Number(revenueValue || 0) / Number(orgsValue) : 0
   const avgTicketsPerEvent = Number(eventsValue) > 0 ? Number(ticketsValue || 0) / Number(eventsValue) : 0
   const growthText = mom?.pct != null ? `${mom.direction === "up" ? "+" : ""}${mom.pct}%` : "—"
-
-  const kpiValueText = (v) => {
-    if (v == null) return "—"
-    const s = String(v).trim()
-    return s === "" ? "—" : s
-  }
 
   useEffect(() => {
     let alive = true
@@ -288,14 +274,7 @@ export default function AdminDashboard() {
                       </div>
                     </CardHeader>
                     <CardContent className="px-3 pb-3 pt-1">
-                      <div dir="ltr" className="min-w-0">
-                        <div
-                          className="truncate text-[clamp(1.15rem,1.9vw,1.6rem)] font-bold leading-none tracking-tight tabular-nums text-brand-navy"
-                          title={kpiValueText(value)}
-                        >
-                          {kpiValueText(value)}
-                        </div>
-                      </div>
+                      <AdminKpiValue value={value} size="compact" as="div" />
                       <p className="mt-1 line-clamp-1 text-[11px] font-medium text-slate-500">{hint}</p>
                     </CardContent>
                   </Card>
@@ -383,13 +362,7 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent className="px-3 pb-3 pt-1">
                       <div className="flex items-end justify-between gap-3">
-                        <p
-                          dir="ltr"
-                          className="min-w-0 truncate text-[clamp(1.15rem,1.9vw,1.6rem)] font-bold leading-none tracking-tight tabular-nums text-brand-navy"
-                          title={kpiValueText(value)}
-                        >
-                          {kpiValueText(value)}
-                        </p>
+                        <AdminKpiValue value={value} size="compact" className="min-w-0 flex-1" />
                         <p className="mb-0.5 text-[11px] font-medium text-slate-500">{sub}</p>
                       </div>
                     </CardContent>

@@ -9,6 +9,13 @@ export function formatCountEn(v) {
   return Number.isFinite(n) ? n.toLocaleString(NUM) : String(v)
 }
 
+/** String for KPI tiles — safe trim, em dash for empty (pairs with tabular-nums + truncate in UI). */
+export function formatKpiDisplayText(v) {
+  if (v == null) return "—"
+  const s = String(v).trim()
+  return s === "" ? "—" : s
+}
+
 /** مبلغ مع فاصل آلاف إنجليزي */
 export function formatMoneyEn(v, suffix = "د.ع") {
   if (v === undefined || v === null) return "—"

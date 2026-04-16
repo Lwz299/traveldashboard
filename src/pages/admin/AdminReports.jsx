@@ -18,24 +18,14 @@ import {
   Wallet,
 } from "lucide-react"
 import { formatCountEn, formatDateEn, formatMoneyEn } from "../../utils/formatEn"
+import { firstDefined } from "../../utils/firstDefined"
+import AdminKpiValue from "../../components/admin/AdminKpiValue"
 import OrganizationCharts from "../../components/charts/OrganizationCharts"
 import AdminTrendCharts from "../../components/charts/AdminTrendCharts"
 import { MotionSection, MotionSurface, StaggerItem, StaggerList } from "../../components/motion"
 import { adminPageError, adminTextMuted } from "../../lib/admin-ui"
 import { AdminCardsSkeleton, AdminTableSkeleton } from "../../components/motion/AdminSkeletons"
 import MotionTableRow from "../../components/motion/MotionTableRow"
-
-/** يدعم camelCase و PascalCase كما يرجعها ASP.NET أحياناً */
-function firstDefined(obj, keys) {
-  if (!obj || typeof obj !== "object") return undefined
-  for (const k of keys) {
-    if (Object.prototype.hasOwnProperty.call(obj, k)) {
-      const v = obj[k]
-      if (v !== undefined && v !== null) return v
-    }
-  }
-  return undefined
-}
 
 function orgRowKey(row, idx) {
   return (
@@ -186,12 +176,6 @@ export default function AdminReports() {
     Number(totalOrganizations) > 0 ? Number(totalRevenue || 0) / Number(totalOrganizations) : 0
   const eventsPerOrg = comparison.length > 0 ? allEvents.length / comparison.length : 0
 
-  const kpiValueText = (v) => {
-    if (v == null) return "—"
-    const s = String(v).trim()
-    return s === "" ? "—" : s
-  }
-
   const summaryCards = summary ? (
     <StaggerList className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
       {[
@@ -264,14 +248,7 @@ export default function AdminReports() {
                 </div>
               </CardHeader>
               <CardContent className="pb-5">
-                <div dir="ltr" className="min-w-0">
-                  <div
-                    className="truncate text-[clamp(1.35rem,2.2vw,2.05rem)] font-bold leading-none tracking-tight tabular-nums text-brand-navy"
-                    title={kpiValueText(value)}
-                  >
-                    {kpiValueText(value)}
-                  </div>
-                </div>
+                <AdminKpiValue value={value} size="comfortable" />
                 <p className="mt-1 text-[11px] font-medium text-slate-500">{sub}</p>
               </CardContent>
             </Card>

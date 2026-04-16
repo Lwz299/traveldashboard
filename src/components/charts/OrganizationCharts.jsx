@@ -17,26 +17,17 @@ import { Button } from "../ui/button"
 import { formatMoneyEn, formatCountEn } from "../../utils/formatEn"
 import { EASE } from "../../lib/motion-variants"
 import ChartBox from "./ChartBox"
+import { firstDefined } from "../../utils/firstDefined"
+import {
+  CHART_GRID as GRID,
+  CHART_AXIS as AXIS,
+  CHART_BAR as BAR,
+  CHART_BAR_HOVER as BAR_HOVER,
+  CHART_BAR_SOFT as BAR_SOFT,
+  CHART_PIE_COLORS as PIE_COLORS,
+} from "./chartPalette"
 
 const MotionDiv = motion.div
-
-const GRID = "#dbe7f5"
-const AXIS = "#475569"
-const BAR = "#0f766e"
-const BAR_HOVER = "#0ea5e9"
-const BAR_SOFT = "#1d4ed8"
-const PIE_COLORS = ["#0f766e", "#0284c7", "#2563eb", "#7c3aed", "#ea580c", "#94a3b8"]
-
-function firstDefined(obj, keys) {
-  if (!obj || typeof obj !== "object") return undefined
-  for (const k of keys) {
-    if (Object.prototype.hasOwnProperty.call(obj, k)) {
-      const v = obj[k]
-      if (v !== undefined && v !== null) return v
-    }
-  }
-  return undefined
-}
 
 function orgDisplayName(row) {
   return row.organizationName ?? row.OrganizationName ?? row.name ?? row.Name ?? "—"

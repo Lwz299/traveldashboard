@@ -1,16 +1,8 @@
 /** Shared event row helpers — org + admin listings */
 import { resolveApiAssetUrl } from "./apiAssetUrl"
+import { firstDefined } from "./firstDefined"
 
-export function firstDefined(obj, keys) {
-  if (!obj || typeof obj !== "object") return undefined
-  for (const k of keys) {
-    if (Object.prototype.hasOwnProperty.call(obj, k)) {
-      const v = obj[k]
-      if (v !== undefined && v !== null) return v
-    }
-  }
-  return undefined
-}
+export { firstDefined }
 
 export function eventLocation(ev) {
   const v = firstDefined(ev, ["locationName", "location", "Location", "venue", "Venue"])

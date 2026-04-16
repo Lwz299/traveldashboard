@@ -1,4 +1,4 @@
-import { useMemo, useId } from "react"
+import { useId } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import {
   ResponsiveContainer,
@@ -16,57 +16,17 @@ import { TrendingUp, TrendingDown, LineChart as LineChartIcon, Percent } from "l
 import { formatCountEn, formatMoneyEn } from "../../utils/formatEn"
 import { EASE } from "../../lib/motion-variants"
 import ChartBox from "./ChartBox"
+import { useAdminChartData } from "./useAdminChartData"
 import {
-  aggregateEventsByMonth,
-  enrichMonthlyWithPlatformTotals,
-  computeRevenueMonthOverMonth,
-} from "../../utils/adminAnalyticsFromEvents"
+  CHART_GRID as GRID,
+  CHART_AXIS as AXIS,
+  CHART_REV_STROKE as REV_STROKE,
+  CHART_REV_FILL as REV_FILL,
+  CHART_TIX_STROKE as TIX_STROKE,
+  CHART_TIX_FILL as TIX_FILL,
+} from "./chartPalette"
 
 const MotionDiv = motion.div
-
-const GRID = "#dbe7f5"
-const AXIS = "#475569"
-const REV_STROKE = "#0f766e"
-const REV_FILL = "#14b8a6"
-const TIX_STROKE = "#1d4ed8"
-const TIX_FILL = "#60a5fa"
-
-function firstDefined(obj, keys) {
-  if (!obj || typeof obj !== "object") return undefined
-  for (const k of keys) {
-    if (Object.prototype.hasOwnProperty.call(obj, k)) {
-      const v = obj[k]
-      if (v !== undefined && v !== null) return v
-    }
-  }
-  return undefined
-}
-
-function summaryTotals(summary) {
-  if (!summary || typeof summary !== "object") return {}
-  const totalRevenue = firstDefined(summary, [
-    "totalRevenue",
-    "TotalRevenue",
-    "grossRevenue",
-    "GrossRevenue",
-  ])
-  const totalTickets = firstDefined(summary, [
-    "totalTickets",
-    "TotalTickets",
-    "ticketsSold",
-    "TicketsSold",
-    "totalTicketsSold",
-    "TotalTicketsSold",
-    "soldTickets",
-    "SoldTickets",
-  ])
-  const tr = Number(totalRevenue)
-  const tt = Number(totalTickets)
-  return {
-    totalRevenue: Number.isFinite(tr) ? tr : undefined,
-    totalTickets: Number.isFinite(tt) ? tt : undefined,
-  }
-}
 
 function RevTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
@@ -103,16 +63,6 @@ const chartMotion = (delay = 0) => ({
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.38, ease: EASE, delay },
 })
-
-export function useAdminChartData(events, summary) {
-  const platform = useMemo(() => summaryTotals(summary), [summary])
-  const series = useMemo(() => {
-    const raw = aggregateEventsByMonth(events ?? [])
-    return enrichMonthlyWithPlatformTotals(raw, platform)
-  }, [events, platform])
-  const mom = useMemo(() => computeRevenueMonthOverMonth(series), [series])
-  return { series, mom, hasData: series.length > 0 }
-}
 
 export function AdminRevenueChart({ series, hasData, reduce = false, gradId = "rev1" }) {
   const m = reduce ? {} : chartMotion(0)

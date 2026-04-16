@@ -1,15 +1,6 @@
 /** Build monthly analytics from global events + optional platform totals (proportional split when per-event $/tickets missing). */
 
-function firstDefined(obj, keys) {
-  if (!obj || typeof obj !== "object") return undefined
-  for (const k of keys) {
-    if (Object.prototype.hasOwnProperty.call(obj, k)) {
-      const v = obj[k]
-      if (v !== undefined && v !== null) return v
-    }
-  }
-  return undefined
-}
+import { firstDefined } from "./firstDefined"
 
 const EVENT_DATE_KEYS = ["startDate", "StartDate", "createdAt", "CreatedAt", "created", "Created"]
 const TICKET_KEYS = [

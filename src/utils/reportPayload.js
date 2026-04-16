@@ -2,16 +2,7 @@
  * تطبيع استجابات تقارير المنظمة — يدعم camelCase و PascalCase وحقول بديلة شائعة.
  */
 
-function firstDefined(obj, keys) {
-  if (!obj || typeof obj !== "object") return undefined
-  for (const k of keys) {
-    if (Object.prototype.hasOwnProperty.call(obj, k)) {
-      const v = obj[k]
-      if (v !== undefined && v !== null && v !== "") return v
-    }
-  }
-  return undefined
-}
+import { firstDefinedNonEmpty as firstDefined } from "./firstDefined"
 
 function toFiniteNumber(v) {
   if (v === undefined || v === null || v === "") return null
