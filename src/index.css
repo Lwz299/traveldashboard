@@ -1,0 +1,342 @@
+@import "tailwindcss";
+
+/*
+  Quiet Authority — لوحة ألوان احترافية
+  Navy #0F172A · Sky #0EA5E9 / #38BDF8 · Canvas #F8FAFC
+  Success #10B981 · Warning #F59E0B · Error #EF4444
+*/
+:root {
+  --teal: #006a6a;
+  --brand-navy: #0f172a;
+  --brand-sky: #0ea5e9;
+  --brand-sky-light: #38bdf8;
+  --surface-canvas: #f8fafc;
+  --semantic-success: #10b981;
+  --semantic-warning: #f59e0b;
+  --semantic-error: #ef4444;
+  --text-secondary: #64748b;
+
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  /* منظمة: تركواز */
+  --primary: 180 100% 21%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 174 25% 95%;
+  --secondary-foreground: 180 100% 21%;
+  --muted: 174 25% 97%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 174 25% 94%;
+  --accent-foreground: 180 100% 21%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 180 100% 21%;
+  --radius: 0.625rem;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 222 47% 11%;
+  --sidebar-border: 214 32% 92%;
+}
+
+/* Super Admin: سماء نشِطة + نص كحلي — السلطة الهادئة */
+.admin-app {
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 199 89% 48%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 204 94% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 98%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 204 94% 94%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 199 89% 48%;
+  --sidebar-border: 214 32% 90%;
+
+  --admin-surface: 210 40% 98%;
+  --admin-muted: 210 40% 98%;
+  --admin-border: 214 32% 91%;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+.admin-app ::selection {
+  background: hsl(204 94% 90%);
+  color: hsl(222 47% 11%);
+}
+
+/* بطاقات: تدرج خفيف + عمق — بدون إزعاج */
+.admin-app .admin-card-surface {
+  background: linear-gradient(
+    145deg,
+    hsl(0 0% 100%) 0%,
+    hsl(210 40% 99% / 0.98) 42%,
+    hsl(204 94% 97% / 0.72) 100%
+  );
+  border: 1px solid hsl(214 32% 91% / 0.95);
+  box-shadow:
+    0 1px 2px hsl(222 47% 11% / 0.04),
+    0 0 0 1px hsl(204 94% 97% / 0.85) inset;
+}
+
+/* Glass: قوائم منسدلة — لوحة إدارة ومنظمة */
+.glass-panel,
+.admin-glass {
+  background: hsl(0 0% 100% / 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: hsl(214 32% 91% / 0.85);
+  box-shadow: 0 10px 40px -12px hsl(222 47% 11% / 0.12);
+}
+
+/* أرقام وإحصائيات بارزة */
+.admin-stat-value {
+  color: var(--brand-sky);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-heading {
+  color: var(--brand-navy);
+}
+
+.admin-text-secondary {
+  color: var(--text-secondary);
+}
+
+/* Ticket detail — Chevron progress bar (clip-path shape) */
+.chevron-clip {
+  clip-path: polygon(0% 0%, calc(100% - 20px) 0%, 100% 50%, calc(100% - 20px) 100%, 0% 100%, 20px 50%);
+}
+
+.chevron-clip-first {
+  clip-path: polygon(0% 0%, calc(100% - 20px) 0%, 100% 50%, calc(100% - 20px) 100%, 0% 100%);
+}
+
+.chevron-clip-last {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 20px 50%);
+}
+
+.active-gradient {
+  background: linear-gradient(135deg, #0f3a68 0%, #0ea5e9 100%);
+}
+
+/*
+ * Organization app — teal / emerald primary, soft surfaces, readable contrast
+ */
+.org-app {
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  /* Canvas: soft mint-tinted (not flat gray) */
+  --org-canvas-from: 160 38% 98%;
+  --org-canvas-to: 165 32% 95%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  /* Primary: teal-green — buttons, focus, links */
+  --primary: 160 72% 32%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 158 42% 94%;
+  --secondary-foreground: 166 45% 18%;
+  --muted: 158 28% 96%;
+  --muted-foreground: 215 16% 42%;
+  --accent: 158 38% 92%;
+  --accent-foreground: 166 50% 18%;
+  --destructive: 0 72% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 160 22% 88%;
+  --input: 160 22% 88%;
+  --ring: 160 72% 38%;
+  background: linear-gradient(
+    180deg,
+    hsl(var(--org-canvas-from)) 0%,
+    hsl(var(--org-canvas-to)) 100%
+  );
+  color: hsl(var(--foreground));
+}
+
+.org-app ::selection {
+  background: hsl(158 55% 86%);
+  color: hsl(166 45% 14%);
+}
+
+/* KPI numbers — strong hierarchy */
+.org-app .org-stat-value {
+  color: hsl(160 72% 26%);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.org-app .org-heading {
+  color: hsl(166 40% 16%);
+}
+
+.org-app .org-text-secondary {
+  color: hsl(215 14% 46%);
+}
+
+/* Cards: light tinted fill + subtle depth */
+.org-app .org-card-surface {
+  background: linear-gradient(
+    155deg,
+    hsl(0 0% 100%) 0%,
+    hsl(158 42% 99.2%) 45%,
+    hsl(160 35% 97.5%) 100%
+  );
+  border: 1px solid hsl(160 22% 88% / 0.95);
+  border-radius: 1rem;
+  box-shadow:
+    0 1px 2px hsl(160 30% 20% / 0.05),
+    0 4px 16px -4px hsl(160 35% 30% / 0.08),
+    0 0 0 1px hsl(0 0% 100% / 0.7) inset;
+}
+
+.org-app .org-card-surface:hover {
+  box-shadow:
+    0 2px 4px hsl(160 30% 20% / 0.06),
+    0 8px 24px -6px hsl(160 40% 28% / 0.12),
+    0 0 0 1px hsl(0 0% 100% / 0.85) inset;
+}
+
+/* Sidebar: light surface (matches main canvas, not dark theme) */
+.org-app .org-sidebar-surface {
+  background: linear-gradient(
+    180deg,
+    hsl(158 32% 98.5%) 0%,
+    hsl(0 0% 100%) 45%,
+    hsl(158 24% 97%) 100%
+  );
+  border-inline-end: 1px solid hsl(160 22% 88% / 0.95);
+  box-shadow: 4px 0 28px -14px hsl(160 35% 25% / 0.08);
+}
+
+.dark {
+  --background: 0 0% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 9%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 0 0% 14.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 0 0% 83.1%;
+  --sidebar: 0 0% 3.9%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-border: 0 0% 14.9%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-teal: var(--teal);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-sky: var(--brand-sky);
+  --color-brand-sky-light: var(--brand-sky-light);
+  --color-surface-canvas: var(--surface-canvas);
+  --color-semantic-success: var(--semantic-success);
+  --color-semantic-warning: var(--semantic-warning);
+  --color-semantic-error: var(--semantic-error);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  margin: 0;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  min-height: 100svh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse {
+    animation: none !important;
+  }
+}
+
+/* Cards: static hover/active for stronger, calmer UI */
+.org-card-surface,
+.admin-card-surface {
+  transition-property: background-color, border-color, color, box-shadow;
+}
+
+.org-card-surface:hover,
+.admin-card-surface:hover,
+.org-card-surface:active,
+.admin-card-surface:active {
+  transform: none !important;
+}
+
+@keyframes login-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-fade-up {
+  animation: login-fade-up 0.4s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-fade-up {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
