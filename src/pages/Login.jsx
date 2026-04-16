@@ -6,7 +6,7 @@ import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { Eye, EyeOff, Plane } from "lucide-react"
-import loginBackground from "../assets/one.png"
+import loginBackground from "../assets/background.png"
 
 export default function Login() {
   const [email, setEmail] = useState("")
