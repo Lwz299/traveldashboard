@@ -10,8 +10,8 @@
 
 | العنصر | القيمة |
 |--------|--------|
-| **Base URL (تطوير)** | `http://localhost:5096` |
-| **Base URL (إنتاج مثال)** | `https://api.altadumntest.com` |
+| **Base URL (تطوير محلي)** | حسب `VITE_API_URL` أو الافتراضي في `src/config/apiEndpoint.js` |
+| **Base URL (إنتاج — هذا المشروع)** | `https://trave-gdb0b6ccfecpbahv.israelcentral-01.azurewebsites.net/api` |
 | **تسجيل الدخول** | `POST /api/organization-accounts/login` |
 | **دور JWT** | `Organization` |
 | **Claims** | `orgId` (إلزامي)، `orgRole`: `OrgAdmin` \| `OrgStaff` |

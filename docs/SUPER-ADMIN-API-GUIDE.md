@@ -12,7 +12,7 @@
 
 | العنصر | القيمة |
 |--------|--------|
-| **Base URL (تطوير)** | `http://localhost:5096` |
+| **Base URL (الواجهة الافتراضية في المشروع)** | `https://trave-gdb0b6ccfecpbahv.israelcentral-01.azurewebsites.net/api` (أو `VITE_API_URL`) |
 | **تسجيل الدخول** | `POST /api/super-admin/login` |
 | **دور JWT** | `SuperAdmin` |
 | **Header** | `Authorization: Bearer <token>` |

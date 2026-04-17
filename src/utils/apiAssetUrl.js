@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "../config/apiEndpoint.js"
+
 /** يبني URL كاملاً لملفات الخادم: fileUrl من وثائق المنظمة غالباً نسبي (/uploads/... أو /uploads/partner-documents/...) ويُخدم من نفس host الـ API وليس من مسار /api. */
 function apiOriginFromBase(base) {
   if (!base || typeof base !== "string") return ""
@@ -17,7 +19,7 @@ export function resolveApiAssetUrl(input) {
   if (!raw) return ""
   if (/^https?:\/\//i.test(raw) || raw.startsWith("data:") || raw.startsWith("blob:")) return raw
 
-  const origin = apiOriginFromBase(import.meta.env.VITE_API_URL || "")
+  const origin = apiOriginFromBase(getApiBaseUrl())
   if (!origin) return raw
   if (raw.startsWith("/")) return `${origin}${raw}`
   return `${origin}/${raw}`

@@ -34,7 +34,7 @@ export default function Login() {
       if (status === 401 || status === 400) {
         setError(msg || "بريد أو كلمة مرور غير صحيحة. قد تكون المنظمة قيد المراجعة أو غير معتمدة.")
       } else if (!err.response) {
-        setError("تعذر الاتصال بالخادم. تحقق من الاتصال بالإنترنت أو من إعداد VITE_API_URL (https://api.altadumntest.com/api)")
+        setError("تعذر الاتصال بالخادم. تحقق من الاتصال بالإنترنت أو من إعداد VITE_API_URL")
       } else {
         setError(msg || `خطأ ${status || ""}`)
       }

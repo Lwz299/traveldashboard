@@ -1,8 +1,9 @@
 import axios from "axios"
+import { getApiBaseUrl } from "../config/apiEndpoint.js"
 
-// نفس الخادم للمنظمة وللسوبر أدمن. يُفضّل أن ينتهي VITE_API_URL بـ `/api` (مثل http://localhost:5096/api) ليطابق المسارات `.../api/payouts/...`
+// نفس الخادم للمنظمة وللسوبر أدمن. يُفضّل أن ينتهي VITE_API_URL بـ `/api` ليطابق المسارات `.../payouts/...`
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://api.altadumntest.com/api",
+  baseURL: getApiBaseUrl(),
   headers: {
     "Content-Type": "application/json",
   },
