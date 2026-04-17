@@ -23,7 +23,7 @@ export default function AdminKpiValue({ value, size = "compact", className, as =
   }
 
   return (
-    <div dir="ltr" className={cn("min-w-0", className)}>
+    <div dir="ltr" className={cn("flex min-h-[1.5em] min-w-0 items-end", className)}>
       {createElement(as, elProps)}
     </div>
   )

@@ -25,6 +25,7 @@ import { useAdminChartData } from "../../components/charts/useAdminChartData"
 import { AdminRevenueChart, AdminTicketsChart, AdminGrowthChart } from "../../components/charts/AdminTrendCharts"
 import { StaggerList, StaggerItem, MotionSection, MotionSurface, DashboardPageSkeleton } from "../../components/motion"
 import { getSuperAdminNotificationsDelivered } from "../../api/notifications"
+import { cn } from "../../lib/utils.mjs"
 
 const kpiKeys = {
   events: ["totalEvents", "TotalEvents", "eventsCount", "EventsCount"],
@@ -262,20 +263,22 @@ export default function AdminDashboard() {
                   to={to}
                   className="block h-full rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/30 focus-visible:ring-offset-2"
                 >
-                  <Card className="admin-glass h-full min-h-[96px] border border-white/50 bg-white/60 shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:bg-white/85 hover:shadow-md">
-                    <CardHeader className="p-3 pb-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="min-w-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          <span className="block truncate">{label}</span>
+                  <Card className="admin-glass flex h-full min-h-[108px] flex-col border border-white/50 bg-white/60 shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:bg-white/85 hover:shadow-md">
+                    <CardHeader className="shrink-0 space-y-0 p-4 pb-2">
+                      <div className="flex min-h-[2.5rem] items-start justify-between gap-2">
+                        <CardTitle className="min-w-0 flex-1 text-[11px] font-semibold uppercase leading-snug tracking-wide text-slate-500">
+                          <span className="line-clamp-2">{label}</span>
                         </CardTitle>
                         <span className={`flex size-8 shrink-0 items-center justify-center rounded-lg ring-1 ${tone}`}>
                           <Icon className="size-4" strokeWidth={1.9} />
                         </span>
                       </div>
                     </CardHeader>
-                    <CardContent className="px-3 pb-3 pt-1">
-                      <AdminKpiValue value={value} size="compact" as="div" />
-                      <p className="mt-1 line-clamp-1 text-[11px] font-medium text-slate-500">{hint}</p>
+                    <CardContent className={cn("flex flex-1 flex-col justify-end gap-1.5 p-4 pt-0")}>
+                      <div className="min-h-[1.75rem]">
+                        <AdminKpiValue value={value} size="compact" as="div" className="w-full" />
+                      </div>
+                      <p className="line-clamp-1 text-[11px] font-medium leading-tight text-slate-500">{hint}</p>
                     </CardContent>
                   </Card>
                 </Link>
@@ -349,21 +352,23 @@ export default function AdminDashboard() {
             ].map(({ label, value, sub, Icon, tone }) => (
               <StaggerItem key={label}>
                 <MotionSurface>
-                  <Card className="admin-glass h-full min-h-[118px] border border-white/50 bg-white/60 shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:bg-white/80 hover:shadow-md">
-                    <CardHeader className="p-3 pb-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          {label}
+                  <Card className="admin-glass flex h-full min-h-[128px] flex-col border border-white/50 bg-white/60 shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:bg-white/80 hover:shadow-md">
+                    <CardHeader className="shrink-0 space-y-0 p-4 pb-2">
+                      <div className="flex min-h-[2.5rem] items-start justify-between gap-2">
+                        <CardTitle className="min-w-0 flex-1 text-[11px] font-semibold uppercase leading-snug tracking-wide text-slate-500">
+                          <span className="line-clamp-2">{label}</span>
                         </CardTitle>
                         <span className={`flex size-8 shrink-0 items-center justify-center rounded-lg ring-1 ${tone}`}>
                           <Icon className="size-4" strokeWidth={1.9} />
                         </span>
                       </div>
                     </CardHeader>
-                    <CardContent className="px-3 pb-3 pt-1">
-                      <div className="flex items-end justify-between gap-3">
+                    <CardContent className="flex flex-1 flex-col justify-end p-4 pt-0">
+                      <div className="flex min-h-[2.75rem] items-center justify-between gap-3">
                         <AdminKpiValue value={value} size="compact" className="min-w-0 flex-1" />
-                        <p className="mb-0.5 text-[11px] font-medium text-slate-500">{sub}</p>
+                        <p className="shrink-0 max-w-[42%] text-end text-[11px] font-medium leading-tight text-slate-500 sm:max-w-[38%]">
+                          {sub}
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
