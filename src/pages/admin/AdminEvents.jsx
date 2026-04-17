@@ -32,6 +32,8 @@ import {
 } from "../../utils/eventDisplay"
 import { uploadEventImages } from "../../api/eventImages"
 import { normalizeEventPerformance } from "../../utils/reportPayload"
+import { eventIdFromCreateResponse } from "../../utils/createEventPayload"
+import { useAuth } from "../../context/AuthContext"
 import { MotionSection, MotionSurface } from "../../components/motion"
 import { AdminEventsPageSkeleton } from "../../components/motion/AdminSkeletons"
 import {
@@ -55,20 +57,43 @@ function resolveBookingsCount(ev, reportBookings) {
   return null
 }
 
+function orgRowId(org) {
+  return org?.id ?? org?.organizationId ?? org?.Id ?? org?.OrganizationId
+}
+
+function orgRowName(org) {
+  return (
+    org?.organizationName ??
+    org?.OrganizationName ??
+    org?.name ??
+    org?.Name ??
+    "—"
+  )
+}
+
 export default function AdminEvents() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const isSuperAdmin = Boolean(user?.isSuperAdmin)
   const [searchParams] = useSearchParams()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [filters, setFilters] = useState(eventFiltersInitial)
   const [modal, setModal] = useState(null)
+  const [organizations, setOrganizations] = useState([])
+  const [categories, setCategories] = useState([])
   const [form, setForm] = useState({
     title: "",
     description: "",
     startDate: "",
     endDate: "",
     location: "",
+    organizationId: "",
+    categoryId: "",
+    capacity: "100",
+    price: "",
+    bookingDeadline: "",
   })
   /** map eventId → ticketsSold من GET /reports/event-performance/:id */
   const [reportBookings, setReportBookings] = useState({})
@@ -88,6 +113,37 @@ export default function AdminEvents() {
 
   useEffect(() => {
     fetchEvents(false)
+  }, [])
+
+  useEffect(() => {
+    if (!isSuperAdmin) {
+      setOrganizations([])
+      return
+    }
+    let cancelled = false
+    api
+      .get("/organizations")
+      .then((r) => {
+        const d = r.data
+        const list = Array.isArray(d) ? d : d?.items ?? d?.organizations ?? []
+        if (!cancelled) setOrganizations(Array.isArray(list) ? list : [])
+      })
+      .catch(() => {
+        if (!cancelled) setOrganizations([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isSuperAdmin])
+
+  useEffect(() => {
+    api
+      .get("/categories")
+      .then((r) => {
+        const d = r.data
+        setCategories(Array.isArray(d) ? d : d?.items ?? [])
+      })
+      .catch(() => setCategories([]))
   }, [])
 
   useEffect(() => {
@@ -177,7 +233,18 @@ export default function AdminEvents() {
 
   const openCreate = () => {
     setModal("create")
-    setForm({ title: "", description: "", startDate: "", endDate: "", location: "" })
+    setForm({
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      location: "",
+      organizationId: "",
+      categoryId: "",
+      capacity: "100",
+      price: "",
+      bookingDeadline: "",
+    })
     setPendingImages([])
     setPendingCoverIndex(0)
     setError("")
@@ -189,16 +256,38 @@ export default function AdminEvents() {
     setPendingCoverIndex(0)
   }
 
+  /** @returns {Record<string, unknown>} جسم POST /events — يتضمن organizationId للسوبر أدمن فقط */
   const buildPayload = () => {
     const loc = form.location?.trim() || undefined
-    return {
-      title: form.title,
-      description: form.description || undefined,
+    const payload = {
+      title: form.title.trim(),
+      description: form.description?.trim() || undefined,
       startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
       endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
       location: loc,
       locationName: loc,
     }
+    if (isSuperAdmin) {
+      const oid = Number(form.organizationId)
+      if (!Number.isFinite(oid) || oid <= 0) {
+        throw new Error("اختر المنظمة المالكة للفعالية")
+      }
+      payload.organizationId = oid
+    }
+    if (form.categoryId !== "" && form.categoryId != null) {
+      const cid = Number(form.categoryId)
+      if (Number.isFinite(cid) && cid > 0) payload.categoryId = cid
+    }
+    const cap = Number(form.capacity)
+    if (Number.isFinite(cap) && cap > 0) payload.capacity = Math.floor(cap)
+    if (form.price !== "" && form.price != null) {
+      const pr = Number(form.price)
+      if (Number.isFinite(pr) && pr >= 0) payload.price = pr
+    }
+    if (form.bookingDeadline?.trim()) {
+      payload.bookingDeadline = new Date(form.bookingDeadline).toISOString()
+    }
+    return payload
   }
 
   const handleSubmit = async (e) => {
@@ -207,9 +296,16 @@ export default function AdminEvents() {
     setError("")
     setSubmitLoading(true)
     try {
-      const payload = buildPayload()
+      let payload
+      try {
+        payload = buildPayload()
+      } catch (validationErr) {
+        setError(validationErr.message ?? "تحقق من الحقول")
+        setSubmitLoading(false)
+        return
+      }
       const { data } = await api.post("/events", payload)
-      const newId = data?.id ?? data?.Id
+      const newId = eventIdFromCreateResponse(data)
       if (newId != null && pendingImages.length > 0) {
         await uploadEventImages(newId, pendingImages, pendingCoverIndex)
       }
@@ -533,6 +629,53 @@ export default function AdminEvents() {
             <CardContent>
               {error && modal && <div className={`mb-4 ${adminPageError}`}>{error}</div>}
               <form onSubmit={handleSubmit} className="space-y-4">
+                {isSuperAdmin && (
+                  <div className="space-y-2">
+                    <Label className="text-slate-700">المنظمة المالكة *</Label>
+                    <select
+                      className="flex h-11 w-full rounded-xl border border-slate-200/90 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
+                      value={form.organizationId}
+                      onChange={(e) => setForm((f) => ({ ...f, organizationId: e.target.value }))}
+                      required
+                      disabled={submitLoading || organizations.length === 0}
+                    >
+                      <option value="">— اختر منظمة —</option>
+                      {organizations.map((org) => {
+                        const id = orgRowId(org)
+                        if (id == null) return null
+                        return (
+                          <option key={String(id)} value={String(id)}>
+                            {orgRowName(org)}
+                          </option>
+                        )
+                      })}
+                    </select>
+                    {organizations.length === 0 && (
+                      <p className="text-xs text-amber-800">تعذر تحميل قائمة المنظمات. تحقق من الصلاحيات أو حاول لاحقاً.</p>
+                    )}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label className="text-slate-700">التصنيف</Label>
+                  <select
+                    className="flex h-11 w-full rounded-xl border border-slate-200/90 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
+                    value={form.categoryId}
+                    onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
+                    disabled={submitLoading}
+                  >
+                    <option value="">— اختياري —</option>
+                    {categories.map((c) => {
+                      const id = c.id ?? c.categoryId ?? c.Id
+                      const name = c.name ?? c.Name ?? c.title ?? id
+                      if (id == null) return null
+                      return (
+                        <option key={String(id)} value={String(id)}>
+                          {name}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
                 <div className="space-y-2">
                   <Label className="text-slate-700">العنوان</Label>
                   <Input
@@ -573,6 +716,38 @@ export default function AdminEvents() {
                     type="datetime-local"
                     value={form.endDate}
                     onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+                    className="h-11 rounded-xl border-slate-200/90"
+                  />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-slate-700">السعة</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={form.capacity}
+                      onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200/90"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-700">السعر</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={form.price}
+                      onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200/90"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-700">آخر موعد للحجز</Label>
+                  <Input
+                    type="datetime-local"
+                    value={form.bookingDeadline}
+                    onChange={(e) => setForm((f) => ({ ...f, bookingDeadline: e.target.value }))}
                     className="h-11 rounded-xl border-slate-200/90"
                   />
                 </div>

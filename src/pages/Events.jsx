@@ -169,7 +169,7 @@ export default function Events() {
     setSaveError("")
   }
 
-  /** CreateEventDto / UpdateEventDto — camelCase؛ لا تُرسل images[] أو status أو availableSeats */
+  /** CreateEventDto — camelCase؛ المنظمة من JWT (لا تُرسل organizationId). لا تُرسل images[] أو status أو availableSeats */
   const buildPayload = () => {
     const loc = form.location?.trim() || undefined
     const payload = {
