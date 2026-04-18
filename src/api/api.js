@@ -1,7 +1,12 @@
+/**
+ * عميل HTTP الوحيد للمشروع — **axios** عبر هذا المثيل فقط.
+ * لا تستخدم `fetch()` لطلبات الـ REST حتى تُطبَّق `baseURL`، و`Authorization`، و`withCredentials`، ومعالجة 401.
+ * استورد `api` من هذا الملف أو من وحدات `src/api/*.js` التي تبنِي عليه.
+ */
 import axios from "axios"
 import { getApiBaseUrl } from "../config/apiEndpoint.js"
 
-// نفس الخادم للمنظمة وللسوبر أدمن. يُفضّل أن ينتهي VITE_API_URL بـ `/api` ليطابق المسارات `.../payouts/...`
+// نفس الخادم للمنظمة وللسوبر أدمن — انظر `getApiBaseUrl()` و `VITE_API_URL` / `VITE_API_BASE_URL`.
 const api = axios.create({
   baseURL: getApiBaseUrl(),
   withCredentials: true,
