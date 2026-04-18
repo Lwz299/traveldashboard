@@ -4,7 +4,8 @@ import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
-import { FolderTree, Plus, Pencil, Trash2 } from "lucide-react"
+import { Plus, Pencil, Trash2 } from "lucide-react"
+import CategoryIcon, { getCategoryIconName } from "../../components/CategoryIcon"
 import { MotionSection, MotionSurface, StaggerList, StaggerItem } from "../../components/motion"
 import { AdminCardsSkeleton } from "../../components/motion/AdminSkeletons"
 import { adminCardClass, adminPageError, adminBtnPrimary, adminTextMuted } from "../../lib/admin-ui"
@@ -14,7 +15,7 @@ export default function AdminCategories() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [modal, setModal] = useState(null) // 'create' | { id }
-  const [form, setForm] = useState({ name: "", description: "" })
+  const [form, setForm] = useState({ name: "", description: "", iconUrl: "" })
   const [saving, setSaving] = useState(false)
 
   const fetchCategories = async () => {
@@ -36,17 +37,21 @@ export default function AdminCategories() {
 
   const openCreate = () => {
     setModal("create")
-    setForm({ name: "", description: "" })
+    setForm({ name: "", description: "", iconUrl: "" })
   }
 
   const openEdit = (cat) => {
     setModal({ id: cat.id })
-    setForm({ name: cat.name ?? "", description: cat.description ?? "" })
+    setForm({
+      name: cat.name ?? "",
+      description: cat.description ?? "",
+      iconUrl: cat.iconUrl != null ? String(cat.iconUrl) : "",
+    })
   }
 
   const closeModal = () => {
     setModal(null)
-    setForm({ name: "", description: "" })
+    setForm({ name: "", description: "", iconUrl: "" })
   }
 
   const handleSubmit = async (e) => {
@@ -54,10 +59,15 @@ export default function AdminCategories() {
     setSaving(true)
     setError("")
     try {
+      const payload = {
+        name: form.name.trim(),
+        description: form.description.trim(),
+        iconUrl: form.iconUrl.trim() || null,
+      }
       if (modal === "create") {
-        await api.post("/super-admin/categories", form)
+        await api.post("/super-admin/categories", payload)
       } else {
-        await api.put(`/super-admin/categories/${modal.id}`, form)
+        await api.put(`/super-admin/categories/${modal.id}`, payload)
       }
       closeModal()
       fetchCategories()
@@ -115,6 +125,20 @@ export default function AdminCategories() {
                   className="h-11 rounded-xl border-slate-200/90"
                 />
               </div>
+              <div className="space-y-2">
+                <Label className="text-slate-700">اسم الأيقونة (Lucide)</Label>
+                <Input
+                  value={form.iconUrl}
+                  onChange={(e) => setForm((f) => ({ ...f, iconUrl: e.target.value }))}
+                  placeholder="مثال: Music أو Calendar أو Building2"
+                  className="h-11 rounded-xl border-slate-200/90 font-mono text-sm"
+                  dir="ltr"
+                />
+                <p className="text-[11px] leading-relaxed text-slate-500">
+                  الحقل <span className="font-mono">iconUrl</span> في الـ API يُخزّن <strong>اسم تصدير الأيقونة</strong> من
+                  lucide-react (نفس الاسم الظاهر في الوثائق)، وليس رابط صورة.
+                </p>
+              </div>
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={saving} className={adminBtnPrimary}>
                   {saving ? "جاري الحفظ..." : "حفظ"}
@@ -146,7 +170,12 @@ export default function AdminCategories() {
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <FolderTree className="size-5 text-sky-600" strokeWidth={1.75} />
+                          <CategoryIcon
+                            name={getCategoryIconName(cat)}
+                            className="size-5 text-sky-600"
+                            strokeWidth={1.75}
+                            aria-hidden
+                          />
                           <CardTitle className="text-base font-semibold text-brand-navy">{cat.name ?? "—"}</CardTitle>
                         </div>
                         <div className="flex gap-1">
