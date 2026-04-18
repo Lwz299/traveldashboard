@@ -16,6 +16,8 @@ import {
   Image as ImageIcon,
   ImagePlus,
   Star,
+  ListOrdered,
+  Ticket,
 } from "lucide-react"
 import { formatDateEn, formatCountEn, formatMoneyEn } from "../../utils/formatEn"
 import {
@@ -33,6 +35,12 @@ import {
 import { uploadEventImages } from "../../api/eventImages"
 import { normalizeEventPerformance } from "../../utils/reportPayload"
 import { eventIdFromCreateResponse } from "../../utils/createEventPayload"
+import {
+  applyAgendaAndTicketsAfterEventCreate,
+  defaultAgendaRow,
+  defaultTicketTypeRow,
+  validateEventCreationAgendaAndTickets,
+} from "../../utils/eventCreationFollowUp"
 import { useAuth } from "../../context/AuthContext"
 import { MotionSection, MotionSurface } from "../../components/motion"
 import { AdminEventsPageSkeleton } from "../../components/motion/AdminSkeletons"
@@ -183,6 +191,8 @@ export default function AdminEvents() {
   const [pendingImages, setPendingImages] = useState([])
   const [pendingCoverIndex, setPendingCoverIndex] = useState(0)
   const [submitLoading, setSubmitLoading] = useState(false)
+  const [createAgendaRows, setCreateAgendaRows] = useState([defaultAgendaRow()])
+  const [createTicketRows, setCreateTicketRows] = useState([defaultTicketTypeRow()])
 
   useEffect(() => {
     const editId = searchParams.get("edit")
@@ -248,6 +258,8 @@ export default function AdminEvents() {
     setPendingImages([])
     setPendingCoverIndex(0)
     setError("")
+    setCreateAgendaRows([defaultAgendaRow()])
+    setCreateTicketRows([defaultTicketTypeRow()])
   }
 
   const onPickImages = (e) => {
@@ -294,6 +306,11 @@ export default function AdminEvents() {
     e.preventDefault()
     if (modal !== "create") return
     setError("")
+    const check = validateEventCreationAgendaAndTickets(createAgendaRows, createTicketRows)
+    if (!check.ok) {
+      setError(check.message)
+      return
+    }
     setSubmitLoading(true)
     try {
       let payload
@@ -308,6 +325,20 @@ export default function AdminEvents() {
       const newId = eventIdFromCreateResponse(data)
       if (newId != null && pendingImages.length > 0) {
         await uploadEventImages(newId, pendingImages, pendingCoverIndex)
+      }
+      if (newId != null) {
+        try {
+          await applyAgendaAndTicketsAfterEventCreate(api, newId, check.agenda, check.tickets)
+        } catch (followErr) {
+          setError(
+            `${followErr.response?.data?.message ?? followErr.message ?? "خطأ في المتابعة"} — تم إنشاء الفعالية؛ يمكنك إكمال الأجندة والتذاكر من صفحة التفاصيل.`
+          )
+          setModal(null)
+          setPendingImages([])
+          setPendingCoverIndex(0)
+          fetchEvents(true)
+          return
+        }
       }
       setModal(null)
       setPendingImages([])
@@ -619,7 +650,7 @@ export default function AdminEvents() {
 
       {modal === "create" && (
         <div className={adminModalBackdrop} role="presentation">
-          <Card className={`${adminCardClassStatic} max-h-[90vh] w-full max-w-md overflow-y-auto`}>
+          <Card className={`${adminCardClassStatic} max-h-[90vh] w-full max-w-xl overflow-y-auto`}>
             <CardHeader className="flex flex-row items-center justify-between gap-4 py-4">
               <CardTitle className="text-brand-navy">إنشاء فعالية</CardTitle>
               <Button variant="ghost" size="sm" className="rounded-lg" onClick={() => setModal(null)}>
@@ -751,13 +782,183 @@ export default function AdminEvents() {
                     className="h-11 rounded-xl border-slate-200/90"
                   />
                 </div>
+
+                <div className="space-y-3 rounded-xl border border-slate-200/90 bg-sky-50/40 p-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-brand-navy">
+                    <ListOrdered className="size-4 shrink-0 text-sky-600" aria-hidden />
+                    الأجندة (مطلوب)
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-slate-600">
+                    بند واحد على الأقل؛ عنوان البند إلزامي.
+                  </p>
+                  {createAgendaRows.map((row, i) => (
+                    <div
+                      key={`agenda-${i}`}
+                      className="space-y-2 rounded-lg border border-slate-200/80 bg-white/90 p-2.5 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-slate-600">بند {i + 1}</span>
+                        {createAgendaRows.length > 1 ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 rounded-lg px-2 text-xs text-rose-700 hover:bg-rose-50"
+                            onClick={() =>
+                              setCreateAgendaRows((rows) =>
+                                rows.length <= 1 ? [defaultAgendaRow()] : rows.filter((_, j) => j !== i)
+                              )
+                            }
+                          >
+                            حذف
+                          </Button>
+                        ) : null}
+                      </div>
+                      <Input
+                        placeholder="عنوان البند *"
+                        value={row.title}
+                        onChange={(e) =>
+                          setCreateAgendaRows((rows) =>
+                            rows.map((r, j) => (j === i ? { ...r, title: e.target.value } : r))
+                          )
+                        }
+                        className="h-10 rounded-xl border-slate-200/90"
+                      />
+                      <Input
+                        placeholder="الوقت (اختياري)"
+                        value={row.time}
+                        onChange={(e) =>
+                          setCreateAgendaRows((rows) =>
+                            rows.map((r, j) => (j === i ? { ...r, time: e.target.value } : r))
+                          )
+                        }
+                        className="h-10 rounded-xl border-slate-200/90 font-mono text-sm"
+                        dir="ltr"
+                      />
+                      <Input
+                        placeholder="وصف (اختياري)"
+                        value={row.description}
+                        onChange={(e) =>
+                          setCreateAgendaRows((rows) =>
+                            rows.map((r, j) => (j === i ? { ...r, description: e.target.value } : r))
+                          )
+                        }
+                        className="h-10 rounded-xl border-slate-200/90"
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full rounded-xl border-slate-200/90"
+                    onClick={() => setCreateAgendaRows((rows) => [...rows, defaultAgendaRow()])}
+                  >
+                    + إضافة بند
+                  </Button>
+                </div>
+
+                <div className="space-y-3 rounded-xl border border-slate-200/90 bg-white p-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-brand-navy">
+                    <Ticket className="size-4 shrink-0 text-sky-600" aria-hidden />
+                    أنواع التذاكر (مطلوب)
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-slate-600">
+                    نوع واحد على الأقل: الاسم والسعر والسعة.
+                  </p>
+                  {createTicketRows.map((row, i) => (
+                    <div
+                      key={`tt-${i}`}
+                      className="space-y-2 rounded-lg border border-slate-200/80 bg-slate-50/50 p-2.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-slate-600">نوع {i + 1}</span>
+                        {createTicketRows.length > 1 ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 rounded-lg px-2 text-xs text-rose-700 hover:bg-rose-50"
+                            onClick={() =>
+                              setCreateTicketRows((rows) =>
+                                rows.length <= 1 ? [defaultTicketTypeRow()] : rows.filter((_, j) => j !== i)
+                              )
+                            }
+                          >
+                            حذف
+                          </Button>
+                        ) : null}
+                      </div>
+                      <Input
+                        placeholder="اسم النوع *"
+                        value={row.name}
+                        onChange={(e) =>
+                          setCreateTicketRows((rows) =>
+                            rows.map((r, j) => (j === i ? { ...r, name: e.target.value } : r))
+                          )
+                        }
+                        className="h-10 rounded-xl border-slate-200/90"
+                      />
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <Input
+                          type="number"
+                          min={0}
+                          step="any"
+                          placeholder="السعر *"
+                          value={row.price}
+                          onChange={(e) =>
+                            setCreateTicketRows((rows) =>
+                              rows.map((r, j) => (j === i ? { ...r, price: e.target.value } : r))
+                            )
+                          }
+                          className="h-10 rounded-xl border-slate-200/90 tabular-nums"
+                          dir="ltr"
+                        />
+                        <Input
+                          type="number"
+                          min={1}
+                          step={1}
+                          placeholder="السعة *"
+                          value={row.capacity}
+                          onChange={(e) =>
+                            setCreateTicketRows((rows) =>
+                              rows.map((r, j) => (j === i ? { ...r, capacity: e.target.value } : r))
+                            )
+                          }
+                          className="h-10 rounded-xl border-slate-200/90 tabular-nums"
+                          dir="ltr"
+                        />
+                      </div>
+                      <Input
+                        placeholder="وصف النوع (اختياري)"
+                        value={row.description}
+                        onChange={(e) =>
+                          setCreateTicketRows((rows) =>
+                            rows.map((r, j) => (j === i ? { ...r, description: e.target.value } : r))
+                          )
+                        }
+                        className="h-10 rounded-xl border-slate-200/90"
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full rounded-xl border-slate-200/90"
+                    onClick={() => setCreateTicketRows((rows) => [...rows, defaultTicketTypeRow()])}
+                  >
+                    + إضافة نوع تذكرة
+                  </Button>
+                </div>
+
                 <div className="space-y-2 rounded-xl border border-slate-200/90 bg-slate-50/80 p-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
                     <ImagePlus className="size-4 text-sky-600" />
                     صور (اختياري)
                   </div>
                   <p className="text-xs text-slate-600">
-                    بعد الإنشاء تُرفع الصور تلقائياً. للتعديل الكامل افتح صفحة الفعالية من الجدول.
+                    تُرفع بعد إنشاء الفعالية. للتعديل الكامل افتح صفحة الفعالية من الجدول.
                   </p>
                   <Input
                     type="file"
