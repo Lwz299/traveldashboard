@@ -352,7 +352,7 @@ export default function AdminDashboard() {
             ].map(({ label, value, sub, Icon, tone }) => (
               <StaggerItem key={label}>
                 <MotionSurface>
-                  <Card className="admin-glass flex h-full min-h-[128px] flex-col border border-white/50 bg-white/60 shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:bg-white/80 hover:shadow-md">
+                  <Card className="admin-glass flex h-full min-h-[108px] flex-col border border-white/50 bg-white/60 shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:bg-white/85 hover:shadow-md">
                     <CardHeader className="shrink-0 space-y-0 p-4 pb-2">
                       <div className="flex min-h-[2.5rem] items-start justify-between gap-2">
                         <CardTitle className="min-w-0 flex-1 text-[11px] font-semibold uppercase leading-snug tracking-wide text-slate-500">
@@ -363,13 +363,11 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                     </CardHeader>
-                    <CardContent className="flex flex-1 flex-col justify-end p-4 pt-0">
-                      <div className="flex min-h-[2.75rem] items-center justify-between gap-3">
-                        <AdminKpiValue value={value} size="compact" className="min-w-0 flex-1" />
-                        <p className="shrink-0 max-w-[42%] text-end text-[11px] font-medium leading-tight text-slate-500 sm:max-w-[38%]">
-                          {sub}
-                        </p>
+                    <CardContent className="flex flex-1 flex-col justify-end gap-1.5 p-4 pt-0">
+                      <div className="min-h-[1.75rem]">
+                        <AdminKpiValue value={value} size="compact" as="div" className="w-full" />
                       </div>
+                      <p className="line-clamp-1 text-[11px] font-medium leading-tight text-slate-500">{sub}</p>
                     </CardContent>
                   </Card>
                 </MotionSurface>
