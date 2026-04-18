@@ -136,6 +136,11 @@ const LUCIDE_BY_NAME = {
 
 const DEFAULT_ICON = FolderTree
 
+/** أسماء الأيقونات المتاحة للاختيار في الواجهة (نفس مفاتيح `LUCIDE_BY_NAME`، مرتبة). */
+export const CATEGORY_LUCIDE_ICON_KEYS = Object.keys(LUCIDE_BY_NAME).sort((a, b) =>
+  a.localeCompare(b, "en")
+)
+
 /**
  * يقرأ من الـ API حقل `iconUrl` — يُستخدم كاسم تصدير أيقونة Lucide (مثل Music، Building2)، وليس رابط صورة.
  * القيم القديمة التي تبدأ بـ http تُتجاهل وتُعرض الأيقونة الافتراضية.
