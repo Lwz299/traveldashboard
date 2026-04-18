@@ -53,6 +53,58 @@ function pickStr(...vals) {
   return "—"
 }
 
+/** قيمة نصية بدون افتراضي «—» — لحقول الحالة من الـ API */
+function rawStr(...vals) {
+  for (const v of vals) {
+    if (v != null && String(v).trim() !== "") return String(v).trim()
+  }
+  return ""
+}
+
+/** شارة عرض لـ eventListingState / eventIsDeleted (GET /api/tickets/my-tickets وأشباهها في تقارير المنظمة) */
+function ticketEventListingBadge(r) {
+  const deleted = Boolean(r.eventIsDeleted ?? r.EventIsDeleted)
+  if (deleted) {
+    return {
+      label: "فعالية غير متاحة",
+      className: "border-slate-300/80 bg-slate-200/90 text-slate-900 ring-slate-400/30",
+    }
+  }
+  const state = rawStr(r.eventListingState, r.EventListingState)
+  if (state === "Removed") {
+    return {
+      label: "غير متاحة / أُزيلت من العرض",
+      className: "border-slate-200/90 bg-slate-100 text-slate-800 ring-slate-300/50",
+    }
+  }
+  if (state === "Cancelled") {
+    return {
+      label: "ملغاة",
+      className: "border-amber-200/90 bg-amber-50 text-amber-950 ring-amber-400/25",
+    }
+  }
+  if (state === "Active") {
+    return {
+      label: "نشطة",
+      className: "border-emerald-200/90 bg-emerald-50 text-emerald-950 ring-emerald-400/20",
+    }
+  }
+  if (state && state !== "Unknown") {
+    return {
+      label: state,
+      className: "border-slate-200/80 bg-slate-50 text-slate-700 ring-slate-300/40",
+    }
+  }
+  const evSt = rawStr(r.eventStatus, r.EventStatus)
+  if (evSt) {
+    return {
+      label: evSt,
+      className: "border-slate-200/80 bg-white text-slate-600 ring-slate-200/60",
+    }
+  }
+  return null
+}
+
 /**
  * اسم نوع التذكرة للعرض — يطابق أولوية الـ API: الحقل المسطّح `ticketTypeName` (camelCase)،
  * ثم Ticket.TicketType، ثم OrderItem.TicketType (عند غياب التعبئة من مسار التذكرة).
@@ -184,6 +236,10 @@ function buildTicketEarningDisplay(r) {
     orderItemId: pickNum(r.orderItemId, r.OrderItemId),
     ticketId: pickNum(r.ticketId, r.TicketId),
     createdAt: r.createdAt ?? r.CreatedAt ?? null,
+    eventListingState: rawStr(r.eventListingState, r.EventListingState) || null,
+    eventIsDeleted: Boolean(r.eventIsDeleted ?? r.EventIsDeleted),
+    eventStatus: rawStr(r.eventStatus, r.EventStatus) || null,
+    listingBadge: ticketEventListingBadge(r),
   }
 }
 
@@ -869,6 +925,13 @@ export default function Wallet() {
                             )}
                           </td>
                           <td className="max-w-[220px] px-3 py-2.5 align-top text-slate-800 sm:px-4">
+                            {row.listingBadge ? (
+                              <span
+                                className={`mb-1.5 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-tight ring-1 ${row.listingBadge.className}`}
+                              >
+                                {row.listingBadge.label}
+                              </span>
+                            ) : null}
                             <div className="font-medium text-slate-900">{row.eventTitle}</div>
                             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500">
                               {row.eventId != null && (

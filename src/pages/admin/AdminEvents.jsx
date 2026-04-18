@@ -41,6 +41,8 @@ import {
   defaultTicketTypeRow,
   validateEventCreationAgendaAndTickets,
 } from "../../utils/eventCreationFollowUp"
+import { parseConflictError } from "../../utils/apiErrorCodes"
+import { orgApiErrorMessage } from "../../utils/orgApiError"
 import { useAuth } from "../../context/AuthContext"
 import { MotionSection, MotionSurface } from "../../components/motion"
 import { AdminEventsPageSkeleton } from "../../components/motion/AdminSkeletons"
@@ -370,6 +372,30 @@ export default function AdminEvents() {
       await api.delete(`/events/${id}`)
       fetchEvents(true)
     } catch (err) {
+      const c = parseConflictError(err)
+      if (c) {
+        const parts = [c.message, c.hint, c.suggestedAction, c.auditHint].filter(Boolean)
+        const needsFinancialConfirm =
+          isSuperAdmin &&
+          (c.code === "CONFIRM_FINANCIAL_REMOVAL_REQUIRED" || c.confirmQuery === true)
+        if (needsFinancialConfirm) {
+          setError(parts.join(" — "))
+          const okSecond = window.confirm(
+            `${parts.join("\n\n")}\n\nتأكيد الحذف رغم التحذير المالي؟ سيتم إرسال تأكيد للخادم.`
+          )
+          if (!okSecond) return
+          try {
+            await api.delete(`/events/${id}`, { params: { confirmFinancialDeletion: true } })
+            fetchEvents(true)
+            setError("")
+          } catch (err2) {
+            setError(err2.response?.data?.message ?? orgApiErrorMessage(err2, "تعذر الحذف"))
+          }
+          return
+        }
+        setError(parts.join(" — "))
+        return
+      }
       setError(err.response?.data?.message ?? "حدث خطأ")
     }
   }

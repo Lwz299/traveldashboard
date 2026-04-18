@@ -56,6 +56,7 @@ import {
   adminTextMuted,
 } from "../../lib/admin-ui"
 import { orgApiErrorMessage } from "../../utils/orgApiError"
+import { parseEventNotAvailableError } from "../../utils/apiErrorCodes"
 
 function toDatetimeLocalValue(raw) {
   if (raw == null || raw === "") return ""
@@ -116,6 +117,7 @@ export default function AdminEventDetail() {
   const [perfStats, setPerfStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [eventUnavailable, setEventUnavailable] = useState(null)
   const [saveError, setSaveError] = useState("")
   const [saveLoading, setSaveLoading] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -156,6 +158,7 @@ export default function AdminEventDetail() {
     ;(async () => {
       setLoading(true)
       setError("")
+      setEventUnavailable(null)
       setPerfStats(null)
       try {
         const { data } = await api.get(`/events/${eventId}`)
@@ -190,7 +193,14 @@ export default function AdminEventDetail() {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e.response?.data?.message ?? "تعذر تحميل الفعالية")
+          const na = parseEventNotAvailableError(e)
+          if (na) {
+            setEventUnavailable(na)
+            setError("")
+          } else {
+            setError(e.response?.data?.message ?? "تعذر تحميل الفعالية")
+            setEventUnavailable(null)
+          }
           setEvent(null)
         }
       } finally {
@@ -373,6 +383,34 @@ export default function AdminEventDetail() {
 
   if (loading) {
     return <AdminEventsPageSkeleton />
+  }
+
+  if (eventUnavailable) {
+    return (
+      <div className="mx-auto max-w-lg space-y-5 px-1 py-4">
+        <Button type="button" variant="outline" className="gap-2 rounded-xl border-slate-200/90" asChild>
+          <Link to="/admin/events">
+            <ArrowRight className="size-4 rotate-180" />
+            العودة للفعاليات
+          </Link>
+        </Button>
+        <div
+          className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-white p-6 shadow-sm ring-1 ring-slate-900/[0.04]"
+          role="status"
+        >
+          <p className="text-base font-semibold text-brand-navy">{eventUnavailable.message}</p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">{eventUnavailable.hint}</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button className={adminBtnPrimary} asChild>
+              <Link to="/admin/events">قائمة الفعاليات</Link>
+            </Button>
+            <Button variant="outline" className="rounded-xl" asChild>
+              <Link to="/admin">لوحة التحكم</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (error && !event) {

@@ -49,6 +49,7 @@ import { normalizeEventPerformance } from "../utils/reportPayload"
 import { MotionSection, EventsPageSkeleton } from "../components/motion"
 import { orgCardClass, orgBtnPrimary } from "../lib/org-ui"
 import { orgApiErrorMessage } from "../utils/orgApiError"
+import { parseEventNotAvailableError } from "../utils/apiErrorCodes"
 import { resolveApiAssetUrl } from "../utils/apiAssetUrl"
 
 function toDatetimeLocalValue(raw) {
@@ -194,6 +195,7 @@ export default function EventDetail() {
     ;(async () => {
       setLoading(true)
       setError("")
+      setEventUnavailable(null)
       setPerfStats(null)
       setAgenda([])
       try {
@@ -243,7 +245,14 @@ export default function EventDetail() {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(orgApiErrorMessage(e, "تعذر تحميل الفعالية"))
+          const na = parseEventNotAvailableError(e)
+          if (na) {
+            setEventUnavailable(na)
+            setError("")
+          } else {
+            setError(orgApiErrorMessage(e, "تعذر تحميل الفعالية"))
+            setEventUnavailable(null)
+          }
           setEvent(null)
         }
       } finally {
@@ -482,6 +491,34 @@ export default function EventDetail() {
 
   if (loading) {
     return <EventsPageSkeleton />
+  }
+
+  if (eventUnavailable) {
+    return (
+      <div className="mx-auto max-w-lg space-y-5 px-1 py-4">
+        <Button type="button" variant="outline" className="gap-2 rounded-xl border-emerald-900/20" asChild>
+          <Link to="/events">
+            <ArrowRight className="size-4 rotate-180" />
+            العودة للرحلات
+          </Link>
+        </Button>
+        <div
+          className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-white p-6 shadow-sm ring-1 ring-slate-900/[0.04]"
+          role="status"
+        >
+          <p className="text-base font-semibold text-slate-900">{eventUnavailable.message}</p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">{eventUnavailable.hint}</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button className={orgBtnPrimary} asChild>
+              <Link to="/events">تصفح الفعاليات</Link>
+            </Button>
+            <Button variant="outline" className="rounded-xl" asChild>
+              <Link to="/">الصفحة الرئيسية</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (error && !ev) {

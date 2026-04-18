@@ -42,6 +42,7 @@ import {
 } from "../utils/eventDisplay"
 import { uploadEventImages } from "../api/eventImages"
 import { orgApiErrorMessage } from "../utils/orgApiError"
+import { parseConflictError } from "../utils/apiErrorCodes"
 import {
   applyAgendaAndTicketsAfterEventCreate,
   defaultAgendaRow,
@@ -267,6 +268,12 @@ export default function Events() {
       await api.delete(`/events/${id}`)
       fetchEvents(true)
     } catch (err) {
+      const c = parseConflictError(err)
+      if (c) {
+        const parts = [c.message, c.hint, c.suggestedAction, c.auditHint].filter(Boolean)
+        alert(parts.join("\n\n"))
+        return
+      }
       alert(orgApiErrorMessage(err))
     }
   }

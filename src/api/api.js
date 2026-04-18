@@ -4,6 +4,7 @@ import { getApiBaseUrl } from "../config/apiEndpoint.js"
 // نفس الخادم للمنظمة وللسوبر أدمن. يُفضّل أن ينتهي VITE_API_URL بـ `/api` ليطابق المسارات `.../payouts/...`
 const api = axios.create({
   baseURL: getApiBaseUrl(),
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
