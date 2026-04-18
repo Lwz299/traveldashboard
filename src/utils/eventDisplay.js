@@ -145,13 +145,15 @@ export function eventStartDate(ev) {
   return Number.isNaN(d.getTime()) ? null : d
 }
 
-/** Published = green, Draft = red, Cancelled = neutral */
+/** Published = green, Draft = red, Cancelled = neutral, Deleted = soft-removed */
 export function statusBadgeClass(status) {
   const s = (status || "Draft").toString()
   if (s === "Published")
     return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/90"
   if (s === "Draft") return "bg-red-50 text-red-800 ring-1 ring-red-200/90"
   if (s === "Cancelled") return "bg-slate-100 text-slate-700 ring-1 ring-slate-200/90"
+  if (s === "Deleted")
+    return "bg-slate-200/90 text-slate-900 ring-1 ring-slate-400/50"
   return "bg-sky-50 text-sky-900 ring-1 ring-sky-100/90"
 }
 
@@ -160,6 +162,7 @@ export function statusLabelAr(status) {
   if (s === "Published") return "منشور"
   if (s === "Draft") return "مسودة"
   if (s === "Cancelled") return "ملغى"
+  if (s === "Deleted") return "مُزالة من العرض"
   return s
 }
 
@@ -181,9 +184,28 @@ export function eventImagesArray(ev) {
   return Array.isArray(images) ? images : []
 }
 
+/** فعالية محذوفة ناعماً — مخفية عن القوائم العامة، تظهر في my-events للمنظمة */
+export function eventIsSoftDeleted(ev) {
+  if (!ev || typeof ev !== "object") return false
+  const del = ev.isDeleted ?? ev.IsDeleted
+  if (del === true) return true
+  const st = (ev.status ?? ev.Status ?? "").toString()
+  return st === "Deleted"
+}
+
+export function eventDeletedAt(ev) {
+  if (!ev || typeof ev !== "object") return null
+  const raw = ev.deletedAt ?? ev.DeletedAt
+  if (raw == null || raw === "") return null
+  const d = new Date(raw)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
 export const eventFiltersInitial = {
   search: "",
   status: "all",
+  /** all | listed | removed — للتمييز بين المعروض في القوائم والمُزالة ناعماً */
+  listing: "all",
   dateFrom: "",
   dateTo: "",
 }

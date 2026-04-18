@@ -43,6 +43,8 @@ import {
   statusBadgeClass,
   statusLabelAr,
   firstDefined,
+  eventIsSoftDeleted,
+  eventDeletedAt,
 } from "../utils/eventDisplay"
 import { agendaItemId, staffMemberId } from "../utils/agendaDisplay"
 import { normalizeEventPerformance } from "../utils/reportPayload"
@@ -98,6 +100,7 @@ export default function EventDetail() {
   const [perfStats, setPerfStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [eventUnavailable, setEventUnavailable] = useState(null)
 
   const [existingImages, setExistingImages] = useState([])
   const [pendingImages, setPendingImages] = useState([])
@@ -488,6 +491,9 @@ export default function EventDetail() {
   const cap = ev ? eventCapacity(ev) : null
   const st = (ev?.status || "Draft").toString()
   const heroUrl = ev ? eventPrimaryImageUrl(ev) : null
+  const softDeleted = ev ? eventIsSoftDeleted(ev) : false
+  const deletedAt = ev ? eventDeletedAt(ev) : null
+  const salesSuspended = Boolean(ev?.isSalesSuspended ?? ev?.IsSalesSuspended)
 
   if (loading) {
     return <EventsPageSkeleton />
@@ -550,7 +556,7 @@ export default function EventDetail() {
           </Link>
         </Button>
         <div className="flex flex-wrap items-center gap-2">
-          {st !== "Published" && (
+          {!softDeleted && st !== "Published" && (
             <Button
               type="button"
               variant="outline"
@@ -562,7 +568,7 @@ export default function EventDetail() {
               نشر
             </Button>
           )}
-          {st !== "Draft" && st !== "Cancelled" && (
+          {!softDeleted && st !== "Draft" && st !== "Cancelled" && (
             <Button
               type="button"
               variant="outline"
@@ -576,6 +582,26 @@ export default function EventDetail() {
           )}
         </div>
       </div>
+
+      {softDeleted && (
+        <div
+          className="rounded-2xl border border-slate-300/80 bg-slate-100/90 px-4 py-3 text-sm text-slate-800 ring-1 ring-slate-400/25"
+          role="status"
+        >
+          <p className="font-semibold">مُزالة من العرض</p>
+          <p className="mt-1 text-slate-700">
+            لا تظهر هذه الفعالية في القوائم العامة؛ لا يزال بإمكانك إدارة التفاصيل من لوحة المنظمة.
+          </p>
+          {deletedAt && (
+            <p className="mt-2 text-xs tabular-nums text-slate-600">
+              تاريخ الإزالة: {formatDateTimeEn(deletedAt.toISOString())}
+            </p>
+          )}
+          {salesSuspended && (
+            <p className="mt-1 text-xs text-slate-600">بيع التذاكر الجديدة موقوف لهذه الفعالية.</p>
+          )}
+        </div>
+      )}
 
       <MotionSection delay={0.02}>
         <div className="overflow-hidden rounded-2xl border border-emerald-900/12 bg-white shadow-[0_4px_24px_-12px_rgba(15,23,42,0.12)] ring-1 ring-slate-900/[0.04]">

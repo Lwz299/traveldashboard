@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import api from "../../api/api"
 import { Button } from "../../components/ui/button"
@@ -19,7 +19,7 @@ import {
   ListOrdered,
   Ticket,
 } from "lucide-react"
-import { formatDateEn, formatCountEn, formatMoneyEn } from "../../utils/formatEn"
+import { formatDateEn, formatDateTimeEn, formatCountEn, formatMoneyEn } from "../../utils/formatEn"
 import {
   eventLocation,
   eventPrice,
@@ -31,6 +31,8 @@ import {
   eventFiltersInitial,
   eventPrimaryImageUrl,
   eventImagesArray,
+  eventIsSoftDeleted,
+  eventDeletedAt,
 } from "../../utils/eventDisplay"
 import { uploadEventImages } from "../../api/eventImages"
 import { normalizeEventPerformance } from "../../utils/reportPayload"
@@ -207,6 +209,9 @@ export default function AdminEvents() {
 
   const filteredEvents = useMemo(() => {
     return events.filter((ev) => {
+      const soft = eventIsSoftDeleted(ev)
+      if (filters.listing === "listed" && soft) return false
+      if (filters.listing === "removed" && !soft) return false
       const q = filters.search.trim().toLowerCase()
       if (q) {
         const title = (ev.title ?? ev.name ?? "").toLowerCase()
@@ -238,6 +243,7 @@ export default function AdminEvents() {
   const hasActiveFilters =
     filters.search.trim() !== "" ||
     filters.status !== "all" ||
+    filters.listing !== "all" ||
     filters.dateFrom !== "" ||
     filters.dateTo !== ""
 
@@ -445,6 +451,16 @@ export default function AdminEvents() {
               <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:gap-3 xl:w-auto xl:flex-nowrap xl:justify-end">
                 <select
                   className={selectInputClass}
+                  value={filters.listing}
+                  onChange={(e) => setFilters((f) => ({ ...f, listing: e.target.value }))}
+                  aria-label="الظهور في القوائم"
+                >
+                  <option value="all">كل الفعاليات</option>
+                  <option value="listed">معروضة في القوائم</option>
+                  <option value="removed">مُزالة من العرض</option>
+                </select>
+                <select
+                  className={selectInputClass}
                   value={filters.status}
                   onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
                   aria-label="الحالة"
@@ -453,6 +469,7 @@ export default function AdminEvents() {
                   <option value="Published">منشور</option>
                   <option value="Draft">مسودة</option>
                   <option value="Cancelled">ملغى</option>
+                  <option value="Deleted">مُزالة من العرض</option>
                 </select>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                   <span className="hidden text-xs text-slate-500 sm:inline">من</span>
@@ -543,6 +560,8 @@ export default function AdminEvents() {
                       const start = ev.startDate ? formatDateEn(ev.startDate) : "—"
                       const thumb = eventPrimaryImageUrl(ev)
                       const imgCount = eventImagesArray(ev).length
+                      const softDeleted = eventIsSoftDeleted(ev)
+                      const delAt = eventDeletedAt(ev)
                       return (
                         <tr
                           key={ev.id}
@@ -577,6 +596,16 @@ export default function AdminEvents() {
                             <span className="line-clamp-2 font-semibold text-brand-navy">
                               {ev.title || ev.name || "بدون عنوان"}
                             </span>
+                            {softDeleted && (
+                              <span className="mt-1 inline-block rounded-full border border-slate-300/80 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-800">
+                                مُزالة من العرض
+                              </span>
+                            )}
+                            {delAt ? (
+                              <p className="mt-1 text-[11px] tabular-nums text-slate-500">
+                                أُزيلت: {formatDateTimeEn(delAt.toISOString())}
+                              </p>
+                            ) : null}
                           </td>
                           <td className="px-4 py-3 align-top">
                             {orgName ? (
@@ -613,7 +642,7 @@ export default function AdminEvents() {
                               className="inline-flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-slate-200/90 bg-slate-50/95 p-1 shadow-sm ring-1 ring-slate-900/[0.03]"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {st !== "Published" && (
+                              {!softDeleted && st !== "Published" && (
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -626,7 +655,7 @@ export default function AdminEvents() {
                                   <span className="hidden sm:inline">نشر</span>
                                 </Button>
                               )}
-                              {st !== "Draft" && st !== "Cancelled" && (
+                              {!softDeleted && st !== "Draft" && st !== "Cancelled" && (
                                 <Button
                                   type="button"
                                   variant="ghost"

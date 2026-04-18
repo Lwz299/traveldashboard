@@ -44,6 +44,8 @@ import {
   statusBadgeClass,
   statusLabelAr,
   firstDefined,
+  eventIsSoftDeleted,
+  eventDeletedAt,
 } from "../../utils/eventDisplay"
 import { resolveApiAssetUrl } from "../../utils/apiAssetUrl"
 import { normalizeEventPerformance } from "../../utils/reportPayload"
@@ -435,6 +437,9 @@ export default function AdminEventDetail() {
   const st = (ev.status || "Draft").toString()
   const displayTitle = form.title?.trim() || ev.title || ev.name || "بدون عنوان"
   const heroUrl = eventPrimaryImageUrl(ev)
+  const softDeleted = eventIsSoftDeleted(ev)
+  const deletedAt = eventDeletedAt(ev)
+  const salesSuspended = Boolean(ev?.isSalesSuspended ?? ev?.IsSalesSuspended)
 
   return (
     <div className="space-y-5 pb-24 md:space-y-6 md:pb-8">
@@ -453,13 +458,13 @@ export default function AdminEventDetail() {
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {st !== "Published" && (
+          {!softDeleted && st !== "Published" && (
             <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => updateStatus("Published")}>
               <Eye className="size-4" />
               نشر
             </Button>
           )}
-          {st !== "Draft" && st !== "Cancelled" && (
+          {!softDeleted && st !== "Draft" && st !== "Cancelled" && (
             <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => updateStatus("Cancelled")}>
               <XCircle className="size-4" />
               إلغاء النشر
@@ -467,6 +472,26 @@ export default function AdminEventDetail() {
           )}
         </div>
       </div>
+
+      {softDeleted && (
+        <div
+          className="rounded-2xl border border-slate-300/80 bg-slate-100/90 px-4 py-3 text-sm text-slate-800 ring-1 ring-slate-400/25"
+          role="status"
+        >
+          <p className="font-semibold">مُزالة من العرض</p>
+          <p className="mt-1 text-slate-700">
+            لا تظهر في القوائم العامة؛ التفاصيل متاحة للإدارة والمنظمة المالكة فقط.
+          </p>
+          {deletedAt && (
+            <p className="mt-2 text-xs tabular-nums text-slate-600">
+              تاريخ الإزالة: {formatDateTimeEn(deletedAt.toISOString())}
+            </p>
+          )}
+          {salesSuspended && (
+            <p className="mt-1 text-xs text-slate-600">بيع التذاكر الجديدة موقوف لهذه الفعالية.</p>
+          )}
+        </div>
+      )}
 
       <MotionSection delay={0.02}>
         <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">

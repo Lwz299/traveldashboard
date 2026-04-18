@@ -19,7 +19,7 @@ import {
   Star,
   ListOrdered,
 } from "lucide-react"
-import { formatDateEn, formatCountEn, formatMoneyEn } from "../utils/formatEn"
+import { formatDateEn, formatDateTimeEn, formatCountEn, formatMoneyEn } from "../utils/formatEn"
 import {
   MotionHeader,
   MotionSection,
@@ -39,6 +39,8 @@ import {
   firstDefined,
   eventPrimaryImageUrl,
   eventImagesArray,
+  eventIsSoftDeleted,
+  eventDeletedAt,
 } from "../utils/eventDisplay"
 import { uploadEventImages } from "../api/eventImages"
 import { orgApiErrorMessage } from "../utils/orgApiError"
@@ -126,6 +128,9 @@ export default function Events() {
 
   const filteredEvents = useMemo(() => {
     return events.filter((ev) => {
+      const soft = eventIsSoftDeleted(ev)
+      if (filters.listing === "listed" && soft) return false
+      if (filters.listing === "removed" && !soft) return false
       const q = filters.search.trim().toLowerCase()
       if (q) {
         const title = (ev.title ?? ev.name ?? "").toLowerCase()
@@ -156,6 +161,7 @@ export default function Events() {
   const hasActiveFilters =
     filters.search.trim() !== "" ||
     filters.status !== "all" ||
+    filters.listing !== "all" ||
     filters.dateFrom !== "" ||
     filters.dateTo !== ""
 
@@ -398,6 +404,17 @@ export default function Events() {
               aria-label="مرشحات الفعاليات"
             >
               <select
+                className={`${selectInputClass} w-full min-w-[140px] sm:w-[158px] lg:w-[168px]`}
+                value={filters.listing}
+                onChange={(e) => setFilters((f) => ({ ...f, listing: e.target.value }))}
+                aria-label="تصفية حسب الظهور في القوائم"
+              >
+                <option value="all">كل الفعاليات</option>
+                <option value="listed">معروضة في القوائم</option>
+                <option value="removed">مُزالة من العرض</option>
+              </select>
+
+              <select
                 className={`${selectInputClass} w-full min-w-[140px] sm:w-[158px] lg:w-[158px]`}
                 value={filters.status}
                 onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
@@ -407,6 +424,7 @@ export default function Events() {
                 <option value="Published">منشور</option>
                 <option value="Draft">مسودة</option>
                 <option value="Cancelled">ملغى</option>
+                <option value="Deleted">مُزالة من العرض</option>
               </select>
 
               <div className="hidden h-8 w-px shrink-0 bg-emerald-900/15 lg:block" aria-hidden />
@@ -505,6 +523,8 @@ export default function Events() {
                       const st = (ev.status || "Draft").toString()
                       const thumb = eventPrimaryImageUrl(ev)
                       const imgCount = eventImagesArray(ev).length
+                      const softDeleted = eventIsSoftDeleted(ev)
+                      const delAt = eventDeletedAt(ev)
                       return (
                         <tr
                           key={ev.id}
@@ -539,8 +559,18 @@ export default function Events() {
                             <span className="line-clamp-2 font-semibold text-slate-900">
                               {ev.title || ev.name || "بدون عنوان"}
                             </span>
+                            {softDeleted && (
+                              <span className="mt-1 inline-block rounded-full border border-slate-300/80 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-800">
+                                مُزالة من العرض
+                              </span>
+                            )}
                             {ev.description ? (
                               <p className="mt-1 line-clamp-1 text-xs text-slate-500">{ev.description}</p>
+                            ) : null}
+                            {delAt ? (
+                              <p className="mt-1 text-[11px] tabular-nums text-slate-500">
+                                أُزيلت: {formatDateTimeEn(delAt.toISOString())}
+                              </p>
                             ) : null}
                           </td>
                           <td className="max-w-[160px] px-4 py-3 align-top">
@@ -578,7 +608,7 @@ export default function Events() {
                               >
                                 <Ticket className="size-3.5" />
                               </Button>
-                              {st !== "Published" && (
+                              {!softDeleted && st !== "Published" && (
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -590,7 +620,7 @@ export default function Events() {
                                   <Eye className="size-3.5" />
                                 </Button>
                               )}
-                              {st !== "Draft" && st !== "Cancelled" && (
+                              {!softDeleted && st !== "Draft" && st !== "Cancelled" && (
                                 <Button
                                   type="button"
                                   variant="outline"

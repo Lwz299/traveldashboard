@@ -61,19 +61,21 @@ function rawStr(...vals) {
   return ""
 }
 
+const LISTING_UNAVAILABLE_LABEL = "الفعالية غير متاحة في القائمة"
+
 /** شارة عرض لـ eventListingState / eventIsDeleted (GET /api/tickets/my-tickets وأشباهها في تقارير المنظمة) */
 function ticketEventListingBadge(r) {
   const deleted = Boolean(r.eventIsDeleted ?? r.EventIsDeleted)
   if (deleted) {
     return {
-      label: "فعالية غير متاحة",
+      label: LISTING_UNAVAILABLE_LABEL,
       className: "border-slate-300/80 bg-slate-200/90 text-slate-900 ring-slate-400/30",
     }
   }
   const state = rawStr(r.eventListingState, r.EventListingState)
   if (state === "Removed") {
     return {
-      label: "غير متاحة / أُزيلت من العرض",
+      label: LISTING_UNAVAILABLE_LABEL,
       className: "border-slate-200/90 bg-slate-100 text-slate-800 ring-slate-300/50",
     }
   }

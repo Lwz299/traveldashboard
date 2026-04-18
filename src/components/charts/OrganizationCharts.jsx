@@ -159,8 +159,6 @@ const cardEnter = {
 
 /**
  * مخططات مقارنة المنظمات — تصميم هادئ يتوافق مع واجهة الإدارة.
-/**
- * مخططات مقارنة المنظمات — تصميم هادئ يتوافق مع واجهة الإدارة.
  * @param {{ rows: unknown[], compact?: boolean, layout?: string }} props
  */
 export default function OrganizationCharts({ rows, compact = false, layout = "default" }) {
@@ -209,17 +207,22 @@ export default function OrganizationCharts({ rows, compact = false, layout = "de
   const cardMotionProps = reduce ? {} : cardEnter
 
   const barCard = (title, description, data, dataKey, fill, tooltip, emptyMsg) => (
-    <MotionDiv {...cardMotionProps} className="min-h-0 min-w-0">
-      <Card className="h-full rounded-2xl border-slate-200/80 bg-white/90 shadow-sm ring-1 ring-slate-900/[0.04] transition-shadow duration-300 hover:shadow-md">
-        <CardHeader className="pb-2">
+    <MotionDiv {...cardMotionProps} className="flex h-full w-full min-h-0 min-w-0 flex-col">
+      <Card className="flex h-full min-h-0 flex-col rounded-2xl border-slate-200/80 bg-white/90 shadow-sm ring-1 ring-slate-900/[0.04] transition-shadow duration-300 hover:shadow-md">
+        <CardHeader className="shrink-0 pb-2">
           <CardTitle className="text-base font-semibold text-slate-900">{title}</CardTitle>
           <CardDescription className="text-[13px] text-slate-500">{description}</CardDescription>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="flex min-h-0 flex-1 flex-col pt-0">
           {data.length === 0 || (dataKey === "tickets" && data.every((d) => d.tickets === 0)) ? (
-            <p className="py-8 text-center text-sm text-slate-500">{emptyMsg}</p>
+            <div
+              className="flex w-full flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200/90 bg-slate-50/50 px-3 py-6"
+              style={{ minHeight: chartH }}
+            >
+              <p className="text-center text-sm text-slate-500">{emptyMsg}</p>
+            </div>
           ) : (
-            <ChartBox dir="ltr" className="w-full" style={{ height: chartH }}>
+            <ChartBox dir="ltr" className="w-full shrink-0" style={{ height: chartH, minHeight: chartH }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={data}
@@ -433,8 +436,8 @@ export default function OrganizationCharts({ rows, compact = false, layout = "de
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-12 lg:items-stretch lg:gap-5">
-        <div className="lg:col-span-7">
+      <div className="grid items-stretch gap-4 lg:grid-cols-12 lg:gap-5">
+        <div className="flex min-h-0 w-full lg:col-span-7">
           {barCard(
             "أعلى المنظمات — الإيرادات",
             `ترتيب حسب الإيرادات المعلنة في المقارنة (أعلى ${limit}).`,
@@ -445,7 +448,7 @@ export default function OrganizationCharts({ rows, compact = false, layout = "de
             "لا توجد إيرادات للعرض."
           )}
         </div>
-        <div className="lg:col-span-5">
+        <div className="flex min-h-0 w-full lg:col-span-5">
           {barCard(
             "أعلى المنظمات — التذاكر",
             "ترتيب حسب عدد التذاكر في بيانات المقارنة.",
