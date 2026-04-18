@@ -1,5 +1,62 @@
 @import "tailwindcss";
 
+/* Tajawal — محلي (بدون طلبات خارجية لخطوط) */
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url("./assets/fonts/Tajawal/Tajawal-ExtraLight.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("./assets/fonts/Tajawal/Tajawal-Light.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/Tajawal/Tajawal-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./assets/fonts/Tajawal/Tajawal-Medium.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/fonts/Tajawal/Tajawal-Bold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./assets/fonts/Tajawal/Tajawal-ExtraBold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("./assets/fonts/Tajawal/Tajawal-Black.ttf") format("truetype");
+}
+
 /*
   Quiet Authority — لوحة ألوان احترافية
   Navy #0F172A · Sky #0EA5E9 / #38BDF8 · Canvas #F8FAFC
@@ -246,6 +303,8 @@
 }
 
 @theme inline {
+  --font-sans:
+    "Tajawal", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -283,12 +342,7 @@
 
 body {
   margin: 0;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+  font-family: var(--font-sans);
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   -webkit-font-smoothing: antialiased;
