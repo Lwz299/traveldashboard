@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { NavLink, useNavigate, useLocation } from "react-router-dom"
 import { AnimatedOutlet } from "./motion"
 import SupportChat from "./chat/SupportChat"
@@ -34,6 +35,8 @@ import {
   BarChart3,
   Megaphone,
   LifeBuoy,
+  Menu,
+  X,
 } from "lucide-react"
 
 const adminNavItems = [
@@ -78,6 +81,11 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const pageTitle = getPageTitle(pathname)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [pathname])
 
   const handleLogout = () => {
     logout()
@@ -153,8 +161,48 @@ export default function AdminLayout() {
         </div>
       </aside>
 
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[1px] md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+      <aside
+        className={[
+          "fixed inset-y-0 start-0 z-50 flex w-[280px] max-w-[82vw] flex-col border-e border-slate-200/80 bg-white shadow-xl transition-transform duration-200 md:hidden",
+          sidebarOpen ? "translate-x-0" : "translate-x-full",
+        ].join(" ")}
+      >
+        <div className="flex h-14 items-center justify-between border-b border-slate-200/80 px-4">
+          <div className="flex items-center gap-2">
+            <div className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand-navy to-slate-800 text-white">
+              <Shield className="size-4" />
+            </div>
+            <span className="text-sm font-semibold text-brand-navy">غرفة التحكم</span>
+          </div>
+          <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => setSidebarOpen(false)} aria-label="إغلاق القائمة">
+            <X className="size-5" />
+          </Button>
+        </div>
+        <nav className="flex flex-1 flex-col gap-1 overflow-auto p-3">
+          {adminNavItems.map(({ to, icon: Icon, label, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                [
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  isActive ? "bg-sky-600 text-white" : "text-slate-700 hover:bg-slate-100",
+                ].join(" ")
+              }
+            >
+              <Icon className="size-4 shrink-0" strokeWidth={1.75} />
+              <span className="truncate">{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
+
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="admin-glass sticky top-0 z-20 flex h-14 shrink-0 items-center border-b px-4 md:px-6">
+        <header className="admin-glass sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b px-4 md:px-6">
           <Breadcrumb>
             <BreadcrumbList className="text-sm">
               <BreadcrumbItem>
@@ -173,6 +221,15 @@ export default function AdminLayout() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-xl md:hidden"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="فتح القائمة"
+          >
+            <Menu className="size-5" />
+          </Button>
         </header>
         <main className="flex-1 overflow-auto">
           <div className="mx-auto w-full max-w-[min(100%,1600px)] px-4 py-5 sm:px-5 md:px-6 md:py-6 lg:px-8 lg:py-7">

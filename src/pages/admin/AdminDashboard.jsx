@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Link } from "react-router-dom"
 import api from "../../api/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
@@ -19,13 +19,14 @@ import {
 } from "lucide-react"
 import { formatCountEn, formatMoneyEn } from "../../utils/formatEn"
 import { firstDefined } from "../../utils/firstDefined"
-import AdminKpiValue from "../../components/admin/AdminKpiValue"
 import OrganizationCharts from "../../components/charts/OrganizationCharts"
 import { useAdminChartData } from "../../components/charts/useAdminChartData"
 import { AdminRevenueChart, AdminTicketsChart, AdminGrowthChart } from "../../components/charts/AdminTrendCharts"
 import { StaggerList, StaggerItem, MotionSection, MotionSurface, DashboardPageSkeleton } from "../../components/motion"
+import StatBox from "../../components/dashboard/StatBox"
+import DashboardCard from "../../components/dashboard/DashboardCard"
+import DataTable from "../../components/dashboard/DataTable"
 import { getSuperAdminNotificationsDelivered } from "../../api/notifications"
-import { cn } from "../../lib/utils.mjs"
 
 const kpiKeys = {
   events: ["totalEvents", "TotalEvents", "eventsCount", "EventsCount"],
@@ -89,6 +90,128 @@ export default function AdminDashboard() {
   const avgRevenuePerOrg = Number(orgsValue) > 0 ? Number(revenueValue || 0) / Number(orgsValue) : 0
   const avgTicketsPerEvent = Number(eventsValue) > 0 ? Number(ticketsValue || 0) / Number(eventsValue) : 0
   const growthText = mom?.pct != null ? `${mom.direction === "up" ? "+" : ""}${mom.pct}%` : "—"
+
+  const quickOverviewStats = useMemo(
+    () => [
+      {
+        to: "/admin/organizations",
+        label: "المستخدمون (End Users)",
+        value: quickStats.endUsers != null ? formatCountEn(quickStats.endUsers) : "—",
+        icon: Users,
+        tone: "bg-sky-50 text-sky-800 ring-sky-100",
+        hint: "من ملخص التقرير إن توفر",
+      },
+      {
+        to: "/admin/partners",
+        label: "طلبات الانضمام كشريك",
+        value: quickStats.partnerApplications != null ? formatCountEn(quickStats.partnerApplications) : "—",
+        icon: Building2,
+        tone: "bg-violet-50 text-violet-800 ring-violet-100",
+        hint: "طلبات بانتظار المراجعة",
+      },
+      {
+        to: "/admin/payouts",
+        label: "طلبات السحب المعلّقة",
+        value: quickStats.pendingPayouts != null ? formatCountEn(quickStats.pendingPayouts) : "—",
+        icon: Wallet,
+        tone: "bg-amber-50 text-amber-800 ring-amber-100",
+        hint: "قائمة المعلّقة",
+      },
+      {
+        to: "/admin/notifications",
+        label: "إجمالي الإشعارات (Delivered)",
+        value: quickStats.deliveredNotifications != null ? formatCountEn(quickStats.deliveredNotifications) : "—",
+        icon: Megaphone,
+        tone: "bg-rose-50 text-rose-800 ring-rose-100",
+        hint: "سجل التسليم",
+      },
+    ],
+    [quickStats]
+  )
+
+  const mainStats = useMemo(
+    () => [
+      {
+        label: "إجمالي الإيرادات",
+        value: formatMoneyEn(revenueValue, ""),
+        hint: "تقديري شهري",
+        icon: Wallet,
+        tone: "bg-emerald-50 text-emerald-800 ring-emerald-100",
+      },
+      {
+        label: "إجمالي الفعاليات",
+        value: formatCountEn(eventsValue),
+        hint: "على مستوى المنصة",
+        icon: Calendar,
+        tone: "bg-cyan-50 text-cyan-800 ring-cyan-100",
+      },
+      {
+        label: "التذاكر المباعة",
+        value: formatCountEn(ticketsValue),
+        hint: "إجمالي",
+        icon: Ticket,
+        tone: "bg-sky-50 text-sky-800 ring-sky-100",
+      },
+      {
+        label: "المنظمات",
+        value: formatCountEn(orgsValue),
+        hint: "مسجّلة",
+        icon: Building2,
+        tone: "bg-indigo-50 text-indigo-800 ring-indigo-100",
+      },
+      {
+        label: "متوسط الإيراد/منظمة",
+        value: formatMoneyEn(Math.round(avgRevenuePerOrg), ""),
+        hint: "تقديري",
+        icon: Landmark,
+        tone: "bg-violet-50 text-violet-800 ring-violet-100",
+      },
+      {
+        label: "متوسط التذاكر/فعالية",
+        value: formatCountEn(Math.round(avgTicketsPerEvent)),
+        hint: "تقريبي",
+        icon: Activity,
+        tone: "bg-amber-50 text-amber-800 ring-amber-100",
+      },
+      {
+        label: "النمو الشهري",
+        value: growthText,
+        hint: "آخر مقارنة",
+        icon: TrendingUp,
+        tone: "bg-rose-50 text-rose-800 ring-rose-100",
+      },
+      {
+        label: "عدد أشهر التحليل",
+        value: formatCountEn(series.length),
+        hint: "في الرسم الزمني",
+        icon: LineChart,
+        tone: "bg-teal-50 text-teal-800 ring-teal-100",
+      },
+    ],
+    [revenueValue, eventsValue, ticketsValue, orgsValue, avgRevenuePerOrg, avgTicketsPerEvent, growthText, series.length]
+  )
+
+  const comparisonColumns = useMemo(
+    () => [
+      { key: "name", header: "المنظمة", render: (row) => row.orgName ?? row.organizationName ?? row.name ?? "—" },
+      {
+        key: "revenue",
+        header: "الإيرادات",
+        render: (row) => formatMoneyEn(firstDefined(row, ["revenue", "totalRevenue", "grossRevenue"]) ?? 0, ""),
+      },
+      {
+        key: "events",
+        header: "الفعاليات",
+        render: (row) => formatCountEn(firstDefined(row, ["eventsCount", "totalEvents", "events"]) ?? 0),
+      },
+      {
+        key: "tickets",
+        header: "التذاكر",
+        render: (row) => formatCountEn(firstDefined(row, ["ticketsSold", "totalTickets", "tickets"]) ?? 0),
+      },
+    ],
+    []
+  )
 
   useEffect(() => {
     let alive = true
@@ -214,73 +337,21 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 px-3 py-4 md:px-5 md:py-6" dir="rtl">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 sm:space-y-7 lg:space-y-8" dir="rtl">
       <MotionSection delay={0.02} aria-label="ملخص سريع للأقسام">
-        <div className="mb-2 flex items-end justify-between gap-3">
+        <div className="mb-3 flex items-end justify-between gap-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">ملخص سريع</h2>
-          <p className="text-[11px] text-slate-500">أرقام سريعة</p>
+          <p className="text-xs text-slate-500">أرقام سريعة</p>
         </div>
-        <StaggerList className="grid items-stretch gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              to: "/admin/organizations",
-              label: "المستخدمون (End Users)",
-              value: quickStats.endUsers != null ? formatCountEn(quickStats.endUsers) : "—",
-              Icon: Users,
-              tone: "bg-sky-50 text-sky-800 ring-sky-100",
-              hint: "من ملخص التقرير إن توفر",
-            },
-            {
-              to: "/admin/partners",
-              label: "طلبات الانضمام كشريك",
-              value:
-                quickStats.partnerApplications != null ? formatCountEn(quickStats.partnerApplications) : "—",
-              Icon: Building2,
-              tone: "bg-violet-50 text-violet-800 ring-violet-100",
-              hint: "طلبات بانتظار المراجعة",
-            },
-            {
-              to: "/admin/payouts",
-              label: "طلبات السحب المعلّقة",
-              value: quickStats.pendingPayouts != null ? formatCountEn(quickStats.pendingPayouts) : "—",
-              Icon: Wallet,
-              tone: "bg-amber-50 text-amber-800 ring-amber-100",
-              hint: "قائمة المعلّقة",
-            },
-            {
-              to: "/admin/notifications",
-              label: "إجمالي الإشعارات (Delivered)",
-              value:
-                quickStats.deliveredNotifications != null ? formatCountEn(quickStats.deliveredNotifications) : "—",
-              Icon: Megaphone,
-              tone: "bg-rose-50 text-rose-800 ring-rose-100",
-              hint: "سجل التسليم",
-            },
-          ].map(({ to, label, value, Icon, tone, hint }) => (
+        <StaggerList className="grid items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {quickOverviewStats.map(({ to, label, value, icon, tone, hint }) => (
             <StaggerItem key={to}>
               <MotionSurface>
                 <Link
                   to={to}
                   className="block h-full rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/30 focus-visible:ring-offset-2"
                 >
-                  <Card className="admin-glass flex h-full min-h-[108px] flex-col border border-white/50 bg-white/60 shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:bg-white/85 hover:shadow-md">
-                    <CardHeader className="shrink-0 space-y-0 p-4 pb-2">
-                      <div className="flex min-h-[2.5rem] items-start justify-between gap-2">
-                        <CardTitle className="min-w-0 flex-1 text-[11px] font-semibold uppercase leading-snug tracking-wide text-slate-500">
-                          <span className="line-clamp-2">{label}</span>
-                        </CardTitle>
-                        <span className={`flex size-8 shrink-0 items-center justify-center rounded-lg ring-1 ${tone}`}>
-                          <Icon className="size-4" strokeWidth={1.9} />
-                        </span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className={cn("flex flex-1 flex-col justify-end gap-1.5 p-4 pt-0")}>
-                      <div className="min-h-[1.75rem]">
-                        <AdminKpiValue value={value} size="compact" as="div" className="w-full" />
-                      </div>
-                      <p className="line-clamp-1 text-[11px] font-medium leading-tight text-slate-500">{hint}</p>
-                    </CardContent>
-                  </Card>
+                  <StatBox label={label} value={value} icon={icon} tone={tone} hint={hint} className="bg-white/80" />
                 </Link>
               </MotionSurface>
             </StaggerItem>
@@ -292,84 +363,10 @@ export default function AdminDashboard() {
       {summary && (
         <MotionSection delay={0.03} aria-label="ملخص المنصة">
           <StaggerList className="grid items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              {
-                label: "إجمالي الإيرادات",
-                value: formatMoneyEn(revenueValue, ""),
-                sub: "تقديري شهري",
-                Icon: Wallet,
-                tone: "bg-emerald-50 text-emerald-800 ring-emerald-100",
-              },
-              {
-                label: "إجمالي الفعاليات",
-                value: formatCountEn(eventsValue),
-                sub: "على مستوى المنصة",
-                Icon: Calendar,
-                tone: "bg-cyan-50 text-cyan-800 ring-cyan-100",
-              },
-              {
-                label: "التذاكر المباعة",
-                value: formatCountEn(ticketsValue),
-                sub: "إجمالي",
-                Icon: Ticket,
-                tone: "bg-sky-50 text-sky-800 ring-sky-100",
-              },
-              {
-                label: "المنظمات",
-                value: formatCountEn(orgsValue),
-                sub: "مسجّلة",
-                Icon: Building2,
-                tone: "bg-indigo-50 text-indigo-800 ring-indigo-100",
-              },
-              {
-                label: "متوسط الإيراد/منظمة",
-                value: formatMoneyEn(Math.round(avgRevenuePerOrg), ""),
-                sub: "تقديري",
-                Icon: Landmark,
-                tone: "bg-violet-50 text-violet-800 ring-violet-100",
-              },
-              {
-                label: "متوسط التذاكر/فعالية",
-                value: formatCountEn(Math.round(avgTicketsPerEvent)),
-                sub: "تقريبي",
-                Icon: Activity,
-                tone: "bg-amber-50 text-amber-800 ring-amber-100",
-              },
-              {
-                label: "النمو الشهري",
-                value: growthText,
-                sub: "آخر مقارنة",
-                Icon: TrendingUp,
-                tone: "bg-rose-50 text-rose-800 ring-rose-100",
-              },
-              {
-                label: "عدد أشهر التحليل",
-                value: formatCountEn(series.length),
-                sub: "في الرسم الزمني",
-                Icon: LineChart,
-                tone: "bg-teal-50 text-teal-800 ring-teal-100",
-              },
-            ].map(({ label, value, sub, Icon, tone }) => (
+            {mainStats.map(({ label, value, hint, icon, tone }) => (
               <StaggerItem key={label}>
                 <MotionSurface>
-                  <Card className="admin-glass flex h-full min-h-[108px] flex-col border border-white/50 bg-white/60 shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:bg-white/85 hover:shadow-md">
-                    <CardHeader className="shrink-0 space-y-0 p-4 pb-2">
-                      <div className="flex min-h-[2.5rem] items-start justify-between gap-2">
-                        <CardTitle className="min-w-0 flex-1 text-[11px] font-semibold uppercase leading-snug tracking-wide text-slate-500">
-                          <span className="line-clamp-2">{label}</span>
-                        </CardTitle>
-                        <span className={`flex size-8 shrink-0 items-center justify-center rounded-lg ring-1 ${tone}`}>
-                          <Icon className="size-4" strokeWidth={1.9} />
-                        </span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex flex-1 flex-col justify-end gap-1.5 p-4 pt-0">
-                      <div className="min-h-[1.75rem]">
-                        <AdminKpiValue value={value} size="compact" as="div" className="w-full" />
-                      </div>
-                      <p className="line-clamp-1 text-[11px] font-medium leading-tight text-slate-500">{sub}</p>
-                    </CardContent>
-                  </Card>
+                  <StatBox label={label} value={value} hint={hint} icon={icon} tone={tone} className="bg-white/80" />
                 </MotionSurface>
               </StaggerItem>
             ))}
@@ -399,10 +396,30 @@ export default function AdminDashboard() {
       {/* Secondary Analytics: Distribution + comparison */}
       {comparison.length > 0 && (
         <MotionSection delay={0.06} aria-label="تحليلات التوزيع والمقارنة">
-          <div className="mb-2">
+          <div className="mb-3">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">تحليلات التوزيع والمقارنة</h2>
           </div>
-          <OrganizationCharts rows={comparison} />
+          <div className="grid gap-4 xl:grid-cols-12">
+            <div className="xl:col-span-7">
+              <OrganizationCharts rows={comparison} />
+            </div>
+            <div className="xl:col-span-5">
+              <DashboardCard
+                title="مقارنة المنظمات"
+                description="جدول مختصر لأهم مؤشرات الأداء"
+                icon={BarChart3}
+                iconTone="bg-sky-50 text-sky-800 ring-sky-100"
+              >
+                <DataTable
+                  columns={comparisonColumns}
+                  rows={comparison.slice(0, 8)}
+                  rowKey={(row, idx) => row.id ?? row.organizationId ?? idx}
+                  emptyText="لا توجد بيانات مقارنة متاحة."
+                  minWidth="min-w-[560px]"
+                />
+              </DashboardCard>
+            </div>
+          </div>
         </MotionSection>
       )}
 
@@ -416,7 +433,7 @@ export default function AdminDashboard() {
                 to={to}
                 className="group block h-full rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:ring-offset-2"
               >
-                <Card className="admin-glass flex h-full min-h-[112px] flex-col rounded-2xl border border-white/60 bg-white/50 shadow-sm ring-1 ring-slate-900/[0.03] transition-all duration-300 hover:bg-white/90 hover:shadow-md">
+                <Card className="admin-glass flex h-full min-h-[112px] flex-col rounded-2xl border border-white/60 bg-white/70 shadow-sm ring-1 ring-slate-900/[0.03] transition-all duration-300 hover:bg-white hover:shadow-md">
                   <CardContent className="flex flex-1 items-center p-4">
                     <div className="flex w-full items-center gap-3">
                       <div className={`flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ring-1 shadow-sm ${chip}`}>
