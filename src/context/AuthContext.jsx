@@ -1,69 +1,85 @@
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import api from "../api/api"
+import { logoutAllAuth, logoutAuth } from "../api/auth"
+import {
+  clearAuthSession,
+  persistAdminSession,
+  persistOrgSession,
+  readStoredSession,
+} from "../utils/authSession"
 
 const AuthContext = createContext(null)
+
+async function enrichOrgRole(session) {
+  if (session.orgRole || session.isSuperAdmin) return session
+  try {
+    const { data: me } = await api.get("/organization-accounts/me")
+    const role = me?.orgRole ?? me?.role
+    if (role) {
+      localStorage.setItem("orgRole", role)
+      return { ...session, orgRole: role }
+    }
+  } catch {
+    /* ignore */
+  }
+  return session
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    const orgId = localStorage.getItem("orgId")
-    const accountId = localStorage.getItem("accountId")
-    const orgRole = localStorage.getItem("orgRole")
-    const isSuperAdmin = localStorage.getItem("isSuperAdmin") === "true"
-    if (token && (orgId || isSuperAdmin)) {
-      setUser({
-        token,
-        orgId: orgId || null,
-        accountId: accountId || orgId || null,
-        orgRole: orgRole || null,
-        isSuperAdmin,
-      })
-    }
+    const stored = readStoredSession()
+    if (stored) setUser(stored)
     setLoading(false)
   }, [])
 
   const login = async (email, password) => {
     const { data } = await api.post("/organization-accounts/login", { email, password })
-    const token = data.token ?? data.accessToken ?? data.jwt
-    const orgId = data.organizationId ?? data.orgId ?? data.organization_id
-    const accountId = data.applicationUserId ?? data.accountId ?? data.id ?? data.userId ?? orgId
-    const orgRole = data.orgRole ?? null
-    if (token) localStorage.setItem("token", token)
-    if (orgId) localStorage.setItem("orgId", orgId)
-    if (accountId) localStorage.setItem("accountId", accountId)
-    if (orgRole) localStorage.setItem("orgRole", orgRole)
-    localStorage.removeItem("isSuperAdmin")
-    setUser({ token, orgId, accountId, orgRole, isSuperAdmin: false, ...data })
-    return data
+    let session = persistOrgSession(data)
+    session = await enrichOrgRole(session)
+    setUser(session)
+    return session
   }
 
   const adminLogin = async (email, password) => {
     const { data } = await api.post("/super-admin/login", { email, password })
-    const token = data.token ?? data.accessToken ?? data.jwt
-    const accountId = data.applicationUserId ?? data.accountId ?? data.id ?? data.userId
-    if (token) localStorage.setItem("token", token)
-    if (accountId) localStorage.setItem("accountId", accountId)
-    localStorage.setItem("isSuperAdmin", "true")
-    localStorage.removeItem("orgId")
-    localStorage.removeItem("orgRole")
-    setUser({ token, accountId, isSuperAdmin: true, ...data })
-    return data
+    const session = persistAdminSession(data)
+    setUser(session)
+    return session
   }
 
-  const logout = () => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("orgId")
-    localStorage.removeItem("accountId")
-    localStorage.removeItem("orgRole")
-    localStorage.removeItem("isSuperAdmin")
-    setUser(null)
+  const loginFromRegisterResponse = async (data) => {
+    let session = persistOrgSession(data)
+    session = await enrichOrgRole(session)
+    setUser(session)
+    return session
   }
+
+  const logout = useCallback(async (options = {}) => {
+    const refreshToken = localStorage.getItem("refreshToken")
+    const isSuperAdmin = localStorage.getItem("isSuperAdmin") === "true"
+    try {
+      if (options.all && localStorage.getItem("token")) {
+        await logoutAllAuth()
+      } else if (refreshToken) {
+        await logoutAuth(refreshToken)
+      }
+    } catch {
+      /* تجاهل — الجلسة تُمسح محلياً */
+    }
+    clearAuthSession()
+    setUser(null)
+    if (options.redirect !== false) {
+      window.location.href = isSuperAdmin ? "/admin/login" : "/login"
+    }
+  }, [])
 
   return (
-    <AuthContext.Provider value={{ user, login, adminLogin, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, login, adminLogin, loginFromRegisterResponse, logout, loading }}
+    >
       {children}
     </AuthContext.Provider>
   )

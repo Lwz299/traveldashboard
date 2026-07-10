@@ -35,7 +35,7 @@ function statusLabelAr(status) {
   if (status == null || status === "") return "—"
   const s = String(status).toLowerCase()
   if (s === "pending") return "معلقة"
-  if (s === "approved") return "معتمد"
+  if (s === "approved" || s === "completed") return "معتمد / مكتمل"
   if (s === "rejected") return "مرفوض"
   if (s === "processing" || s === "processed") return "قيد المعالجة"
   return String(status)
@@ -114,7 +114,11 @@ export default function AdminPayouts() {
   const handleApprove = async (id) => {
     setApprovingId(id)
     try {
-      await api.post(`/payouts/approve/${id}`)
+      const { data } = await api.post(`/payouts/approve/${id}`)
+      const ref = data?.reference ?? data?.Reference
+      if (ref) {
+        alert(`تمت الموافقة على السحب.\n\nمرجع التحويل: ${ref}\nاحفظه للمراجعة المحاسبية.`)
+      }
       setError("")
       await fetchPending()
       if (tab === "feed") await loadFeed()

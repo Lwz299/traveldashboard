@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { NavLink, useNavigate, useLocation } from "react-router-dom"
 import { AnimatedOutlet } from "./motion"
 import SupportChat from "./chat/SupportChat"
@@ -28,6 +28,7 @@ import {
   Users,
   UsersRound,
   ShoppingCart,
+  Video,
   QrCode,
   ClipboardCheck,
   BarChart3,
@@ -38,17 +39,19 @@ import {
   Plane,
   LifeBuoy,
 } from "lucide-react"
+import { useOrgPermissions } from "../hooks/useOrgPermissions"
 
 const baseNavItems = [
   { to: "/", icon: LayoutDashboard, label: "لوحة التحكم" },
-  { to: "/events", icon: Calendar, label: "الرحلات" },
-  { to: "/orders", icon: ShoppingCart, label: "المبيعات والحجوزات" },
-  { to: "/agenda", icon: ListTodo, label: "الأجندة والنماذج" },
-  { to: "/attendees", icon: Users, label: "المسافرون" },
-  { to: "/field", icon: QrCode, label: "عمليات الميدان" },
-  { to: "/attendance", icon: ClipboardCheck, label: "الحضور" },
+  { to: "/events", icon: Calendar, label: "الرحلات", perm: ["CanManageEvents", "CanManageTrips"] },
+  { to: "/videos", icon: Video, label: "الفيديوهات", perm: ["CanManageVideos"] },
+  { to: "/orders", icon: ShoppingCart, label: "المبيعات والحجوزات", perm: ["CanManageOrders"] },
+  { to: "/agenda", icon: ListTodo, label: "الأجندة والنماذج", perm: ["CanManageEvents", "CanManageTrips"] },
+  { to: "/attendees", icon: Users, label: "المسافرون", perm: ["CanManageOrders"] },
+  { to: "/field", icon: QrCode, label: "عمليات الميدان", perm: ["CanManageOrders"] },
+  { to: "/attendance", icon: ClipboardCheck, label: "الحضور", perm: ["CanManageOrders"] },
   { to: "/reports", icon: BarChart3, label: "التقارير" },
-  { to: "/wallet", icon: Wallet, label: "المحفظة" },
+  { to: "/wallet", icon: Wallet, label: "المحفظة", perm: ["CanManageFinance"] },
   { to: "/org-users", icon: UsersRound, label: "مستخدمو المنظمة" },
   { to: "/profile", icon: User, label: "الملف الشخصي" },
   { to: "/support", icon: LifeBuoy, label: "الدعم الفني" },
@@ -57,8 +60,10 @@ const baseNavItems = [
 const routeTitles = {
   "/": "لوحة التحكم",
   "/events": "الرحلات",
+  "/videos": "الفيديوهات",
   "/org-users": "مستخدمو المنظمة",
   "/orders": "المبيعات والحجوزات",
+  "/bookings": "المبيعات والحجوزات",
   "/agenda": "الأجندة والنماذج",
   "/attendees": "المسافرون",
   "/field": "عمليات الميدان",
@@ -93,7 +98,11 @@ function pickOrganizationName(org) {
 
 export default function Layout() {
   const { user, logout } = useAuth()
-  const navItems = baseNavItems
+  const { can } = useOrgPermissions()
+  const navItems = useMemo(
+    () => baseNavItems.filter((item) => !item.perm || can(item.perm)),
+    [can]
+  )
   const roleLabel = user?.orgRole ? ROLE_LABELS[user.orgRole] ?? user.orgRole : null
   const navigate = useNavigate()
   const location = useLocation()
@@ -123,22 +132,22 @@ export default function Layout() {
     }
   }, [user?.token, user?.isSuperAdmin])
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout({ redirect: false })
     navigate("/login")
   }
 
   const navLinkClass = ({ isActive }) =>
     [
-      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+      "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
       isActive
-        ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/15 ring-1 ring-emerald-700/20"
-        : "text-slate-600 hover:bg-emerald-50/95 hover:text-emerald-900",
+        ? "bg-green-600 text-white shadow-md shadow-green-900/15"
+        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
     ].join(" ")
 
   return (
     <div className="org-app flex min-h-svh w-full text-slate-800 antialiased">
-      <aside className="org-sidebar-surface group/orgside hidden w-[72px] shrink-0 flex-col overflow-hidden transition-[width] duration-300 ease-out hover:w-[260px] focus-within:w-[260px] md:flex">
+      <aside className="org-sidebar-surface group/orgside hidden w-[80px] shrink-0 flex-col overflow-hidden transition-[width] duration-300 ease-out hover:w-[260px] focus-within:w-[260px] md:flex">
         <div className="flex h-16 items-center gap-3 border-b border-slate-200/90 px-5">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-900/12 ring-1 ring-emerald-600/25">
             <Plane className="size-[18px]" strokeWidth={1.75} />
@@ -153,13 +162,22 @@ export default function Layout() {
             <span className="text-xs font-medium text-slate-500">لوحة المنظمة</span>
           </div>
         </div>
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-auto px-3 py-5">
+        <nav className="flex flex-1 flex-col gap-1 overflow-auto px-3 py-5">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink key={to} to={to} end={to === "/"} className={navLinkClass}>
-              <Icon className="size-[18px] shrink-0 opacity-95" strokeWidth={1.75} />
-              <span className="truncate opacity-0 transition-opacity duration-200 group-hover/orgside:opacity-100 group-focus-within/orgside:opacity-100">
-                {label}
-              </span>
+              {({ isActive }) => (
+                <>
+                  <div className="flex w-[32px] shrink-0 items-center justify-center">
+                    <Icon className="size-[20px] opacity-95" strokeWidth={1.75} />
+                  </div>
+                  <span className="truncate opacity-0 transition-opacity duration-200 group-hover/orgside:opacity-100 group-focus-within/orgside:opacity-100">
+                    {label}
+                  </span>
+                  {isActive && (
+                    <span className="absolute left-1 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-white opacity-0 transition-opacity duration-200 group-hover/orgside:opacity-100 group-focus-within/orgside:opacity-100" />
+                  )}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>

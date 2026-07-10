@@ -69,7 +69,49 @@ export function orderAmountFromPayload(o) {
 }
 
 export function orderRowIdFromPayload(o) {
-  return o?.id ?? o?.Id ?? o?.orderId ?? o?.OrderId ?? o?.orderNumber ?? o?.OrderNumber
+  return (
+    o?.id ??
+    o?.Id ??
+    o?.bookingId ??
+    o?.BookingId ??
+    o?.orderId ??
+    o?.OrderId ??
+    o?.orderNumber ??
+    o?.OrderNumber
+  )
+}
+
+export function organizationAmountFromPayload(o) {
+  if (!o || typeof o !== "object") return null
+  const v = o.organizationAmount ?? o.OrganizationAmount
+  if (v == null || v === "") return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : v
+}
+
+export function platformFeeFromPayload(o) {
+  if (!o || typeof o !== "object") return null
+  const v = o.platformFee ?? o.PlatformFee
+  if (v == null || v === "") return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : v
+}
+
+export function paymentReferenceFromPayload(o) {
+  const v = o?.paymentReference ?? o?.PaymentReference
+  return v != null && String(v).trim() !== "" ? String(v).trim() : null
+}
+
+/** ملخص مالي للحجز (Booking v2) للعرض في بطاقة أعلى التفاصيل */
+export function bookingFinancialSummary(detail) {
+  if (!detail || typeof detail !== "object") return null
+  const status = orderStatusFromPayload(detail)
+  const total = orderAmountFromPayload(detail)
+  const orgNet = organizationAmountFromPayload(detail)
+  const fee = platformFeeFromPayload(detail)
+  const payRef = paymentReferenceFromPayload(detail)
+  if (status == null && total == null && orgNet == null && fee == null && !payRef) return null
+  return { status, total, orgNet, platformFee: fee, paymentReference: payRef }
 }
 
 export function orderStatusFromPayload(o) {
@@ -118,22 +160,40 @@ const EVENT_DETAIL_LABELS = {
 }
 
 const ORDER_PRIMITIVE_LABELS = {
-  id: "رقم الطلب",
-  Id: "رقم الطلب",
-  orderId: "رقم الطلب",
-  OrderId: "رقم الطلب",
+  id: "رقم الحجز",
+  Id: "رقم الحجز",
+  bookingId: "رقم الحجز",
+  BookingId: "رقم الحجز",
+  orderId: "رقم الحجز",
+  OrderId: "رقم الحجز",
   totalAmount: "المبلغ الإجمالي",
   TotalAmount: "المبلغ الإجمالي",
   totalPrice: "السعر الإجمالي",
   TotalPrice: "السعر الإجمالي",
+  organizationAmount: "صافي الوكالة",
+  OrganizationAmount: "صافي الوكالة",
+  platformFee: "عمولة المنصة",
+  PlatformFee: "عمولة المنصة",
+  taxes: "الضرائب",
+  Taxes: "الضرائب",
+  currency: "العملة",
+  Currency: "العملة",
+  paymentReference: "مرجع الدفع",
+  PaymentReference: "مرجع الدفع",
   amount: "المبلغ",
   Amount: "المبلغ",
-  status: "حالة الطلب",
-  Status: "حالة الطلب",
+  status: "حالة الحجز",
+  Status: "حالة الحجز",
   createdAt: "تاريخ الإنشاء",
   CreatedAt: "تاريخ الإنشاء",
+  confirmedAt: "تاريخ التأكيد",
+  ConfirmedAt: "تاريخ التأكيد",
+  expiresAt: "انتهاء مهلة الدفع",
+  ExpiresAt: "انتهاء مهلة الدفع",
   eventId: "معرّف الرحلة",
   EventId: "معرّف الرحلة",
+  customerUserId: "معرّف العميل",
+  CustomerUserId: "معرّف العميل",
   userId: "المستخدم",
   UserId: "المستخدم",
   applicationUserId: "معرّف الحساب",

@@ -16,6 +16,7 @@ import {
   normalizeOrganizationDocumentRow,
   labelOrganizationDocumentType,
 } from "../utils/organizationDocuments"
+import { formatOrgPermissionsLabels, normalizeOrgPermissions } from "../utils/orgPermissions"
 
 const ROLE_LABELS = { OrgAdmin: "مدير المنظمة", OrgStaff: "موظف" }
 
@@ -83,6 +84,7 @@ export default function Profile() {
   }
 
   const docs = organization?.documents ?? []
+  const permissionLabels = profile ? formatOrgPermissionsLabels(normalizeOrgPermissions(profile)) : []
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
@@ -117,6 +119,21 @@ export default function Profile() {
                         <div>
                           <dt className="text-sm text-muted-foreground">الهاتف</dt>
                           <dd className="font-medium">{profile.phone}</dd>
+                        </div>
+                      )}
+                      {permissionLabels.length > 0 && (
+                        <div>
+                          <dt className="text-sm text-muted-foreground">الصلاحيات</dt>
+                          <dd className="mt-1 flex flex-wrap gap-1.5">
+                            {permissionLabels.map((label) => (
+                              <span
+                                key={label}
+                                className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-900 ring-1 ring-emerald-200/80"
+                              >
+                                {label}
+                              </span>
+                            ))}
+                          </dd>
                         </div>
                       )}
                     </dl>

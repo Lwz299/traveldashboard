@@ -152,6 +152,7 @@ export function statusBadgeClass(status) {
     return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/90"
   if (s === "Draft") return "bg-red-50 text-red-800 ring-1 ring-red-200/90"
   if (s === "Cancelled") return "bg-slate-100 text-slate-700 ring-1 ring-slate-200/90"
+  if (s === "Completed") return "bg-sky-50 text-sky-900 ring-1 ring-sky-200/90"
   if (s === "Deleted")
     return "bg-slate-200/90 text-slate-900 ring-1 ring-slate-400/50"
   return "bg-sky-50 text-sky-900 ring-1 ring-sky-100/90"
@@ -162,6 +163,7 @@ export function statusLabelAr(status) {
   if (s === "Published") return "منشور"
   if (s === "Draft") return "مسودة"
   if (s === "Cancelled") return "ملغى"
+  if (s === "Completed") return "منتهية"
   if (s === "Deleted") return "مُزالة من العرض"
   return s
 }

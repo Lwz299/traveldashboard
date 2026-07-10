@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react"
+import { Link, useSearchParams } from "react-router-dom"
 import api from "../api/api"
+import { fetchOrganizationBookings, fetchOrganizationBookingDetail } from "../api/bookings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Label } from "../components/ui/label"
@@ -9,6 +11,10 @@ import {
   eventIdFromOrderPayload,
   eventTitleFromOrderPayload,
   orderAmountFromPayload,
+  organizationAmountFromPayload,
+  platformFeeFromPayload,
+  paymentReferenceFromPayload,
+  bookingFinancialSummary,
   orderRowIdFromPayload,
   orderStatusFromPayload,
   orderCreatedFromPayload,
@@ -25,9 +31,9 @@ import {
 import { orgCardClass, orgCardClassSubtle, orgBtnPrimary } from "../lib/org-ui"
 import {
   normalizeOrdersListPayload,
-  normalizeOrderDetailPayload,
   mergeOrderDetailFromSources,
 } from "../utils/orderNormalize"
+import { bookingStatusLabelAr, bookingStatusBadgeClass } from "../utils/bookingStatus"
 
 const btnTap = "transition-transform duration-200 ease-in-out active:scale-[0.98]"
 
@@ -57,12 +63,70 @@ function OrderDetailContent({ detail, eventsById }) {
   const eventObj = eventObjectFromDetail(detail)
   const tripTitle = eventTitleFromOrderPayload(detail, eventsById)
   const eventRows = eventObj ? eventDetailEntries(eventObj) : []
-  const primitiveRows = orderDetailPrimitiveEntries(detail)
+  const finance = bookingFinancialSummary(detail)
+  const primitiveRows = orderDetailPrimitiveEntries(detail).filter(
+    ({ key }) =>
+      !/^(status|Status|totalPrice|TotalPrice|totalAmount|TotalAmount|organizationAmount|OrganizationAmount|platformFee|PlatformFee|paymentReference|PaymentReference)$/.test(
+        String(key).split(".")[0]
+      )
+  )
   const nestedItems = detail?.items ?? detail?.Items ?? detail?.tickets ?? detail?.Tickets
   const hasLineItems = Array.isArray(nestedItems) && nestedItems.length > 0
 
   return (
     <div className="space-y-4">
+      {finance && (
+        <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 p-4 ring-1 ring-emerald-900/[0.06]">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-emerald-900/80">ملخص الحجز والدفع</p>
+          <dl className="grid gap-2 text-sm sm:grid-cols-2">
+            {finance.status != null && (
+              <div className="flex justify-between gap-2 rounded-lg bg-white/90 px-3 py-2">
+                <dt className="text-slate-600">الحالة</dt>
+                <dd>
+                  <span
+                    className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${bookingStatusBadgeClass(finance.status)}`}
+                  >
+                    {bookingStatusLabelAr(finance.status)}
+                  </span>
+                </dd>
+              </div>
+            )}
+            {finance.paymentReference && (
+              <div className="flex justify-between gap-2 rounded-lg bg-white/90 px-3 py-2 sm:col-span-2">
+                <dt className="text-slate-600">مرجع الدفع</dt>
+                <dd className="font-mono text-xs font-medium text-slate-900" dir="ltr">
+                  {finance.paymentReference}
+                </dd>
+              </div>
+            )}
+            {finance.total != null && (
+              <div className="flex justify-between gap-2 rounded-lg bg-white/90 px-3 py-2">
+                <dt className="text-slate-600">الإجمالي</dt>
+                <dd className="font-semibold tabular-nums">{formatMoneyEn(Number(finance.total), "")}</dd>
+              </div>
+            )}
+            {finance.platformFee != null && (
+              <div className="flex justify-between gap-2 rounded-lg bg-white/90 px-3 py-2">
+                <dt className="text-slate-600">عمولة المنصة</dt>
+                <dd className="font-semibold tabular-nums text-amber-900">
+                  {formatMoneyEn(Number(finance.platformFee), "")}
+                </dd>
+              </div>
+            )}
+            {finance.orgNet != null && (
+              <div className="flex justify-between gap-2 rounded-lg bg-white/90 px-3 py-2">
+                <dt className="text-slate-600">صافي الوكالة</dt>
+                <dd className="font-semibold tabular-nums text-emerald-900">
+                  {formatMoneyEn(Number(finance.orgNet), "")}
+                </dd>
+              </div>
+            )}
+          </dl>
+          <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+            يُحدَّث الرصيد في المحفظة تلقائياً عند حالة <strong>Confirmed</strong> بعد دفع العميل من الموبايل.
+          </p>
+        </div>
+      )}
       {eventObj ? (
         <div className="org-card-surface rounded-2xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50/70 via-white to-teal-50/30 p-4 shadow-sm ring-1 ring-emerald-900/[0.05]">
           <div className="mb-3 flex items-start gap-2.5">
@@ -108,7 +172,7 @@ function OrderDetailContent({ detail, eventsById }) {
 
       {primitiveRows.length > 0 ? (
         <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-4 ring-1 ring-slate-900/[0.03]">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">بيانات الطلب</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">بيانات الحجز</p>
           <dl className="space-y-2.5 text-sm">
             {primitiveRows.map(({ key, label, value }) => (
               <div
@@ -138,13 +202,13 @@ function OrderDetailContent({ detail, eventsById }) {
           </pre>
         ) : (
           <p className="rounded-lg border border-amber-200/80 bg-amber-50/60 px-3 py-2 text-sm text-amber-900/90">
-            لا تتوفر في الاستجابة حقول طلب أو ربط واضح بالرحلة.
+            لا تتوفر في الاستجابة حقول حجز أو ربط واضح بالرحلة.
           </p>
         ))}
 
       {hasLineItems && (
         <div className="rounded-2xl border border-teal-200/50 bg-gradient-to-b from-teal-50/40 to-white/90 p-4 ring-1 ring-teal-900/[0.04]">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-teal-900/80">بنود الطلب</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-teal-900/80">بنود الحجز</p>
           <ul className="space-y-2 text-sm text-slate-800">
             {nestedItems.map((it, i) => (
               <li
@@ -153,8 +217,9 @@ function OrderDetailContent({ detail, eventsById }) {
               >
                 {typeof it === "object" && it != null ? (
                   <span className="block whitespace-normal break-words">
-                    {[it.name, it.Name, it.title, it.Title].find((x) => x != null && String(x).trim() !== "") ??
-                      `بند ${i + 1}`}
+                    {[it.ticketTypeName, it.TicketTypeName, it.name, it.Name, it.title, it.Title].find(
+                      (x) => x != null && String(x).trim() !== ""
+                    ) ?? `بند ${i + 1}`}
                     {it.quantity != null || it.Quantity != null
                       ? ` × ${it.quantity ?? it.Quantity}`
                       : ""}
@@ -175,6 +240,8 @@ function OrderDetailContent({ detail, eventsById }) {
 }
 
 export default function Orders() {
+  const [searchParams] = useSearchParams()
+  const eventFilter = searchParams.get("eventId") ?? searchParams.get("trip") ?? ""
   const [orders, setOrders] = useState([])
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [orderDetail, setOrderDetail] = useState(null)
@@ -202,27 +269,41 @@ export default function Orders() {
     return m
   }, [events])
 
+  const visibleOrders = useMemo(() => {
+    if (!eventFilter) return orders
+    return orders.filter((o) => {
+      const eid = eventIdFromOrderPayload(o)
+      return eid != null && String(eid) === String(eventFilter)
+    })
+  }, [orders, eventFilter])
+
+  const filterEventTitle = useMemo(() => {
+    if (!eventFilter) return null
+    const ev = eventsById[eventFilter] ?? eventsById[String(eventFilter)]
+    return ev?.title ?? ev?.name ?? `رحلة #${eventFilter}`
+  }, [eventFilter, eventsById])
+
   const listStats = useMemo(() => {
     let sum = 0
     let withAmt = 0
-    for (const o of orders) {
-      const a = orderAmountFromPayload(o)
+    for (const o of visibleOrders) {
+      const a = organizationAmountFromPayload(o) ?? orderAmountFromPayload(o)
       if (a != null && Number.isFinite(Number(a))) {
         sum += Number(a)
         withAmt += 1
       }
     }
     return {
-      count: orders.length,
+      count: visibleOrders.length,
       totalAmount: withAmt > 0 ? sum : null,
     }
-  }, [orders])
+  }, [visibleOrders])
 
   const loadOrders = useCallback(async (silent = false) => {
     if (!silent) setListRefreshing(true)
     try {
-      const { data } = await api.get("/orders/organization")
-      setOrders(normalizeOrdersListPayload(data))
+      const list = await fetchOrganizationBookings()
+      setOrders(list)
     } catch {
       setOrders([])
     } finally {
@@ -232,11 +313,11 @@ export default function Orders() {
 
   useEffect(() => {
     Promise.all([
-      api.get("/orders/organization").then((r) => r.data).catch(() => null),
+      fetchOrganizationBookings().catch(() => []),
       api.get("/events/organization/my-events").then((r) => r.data).catch(() => null),
     ])
       .then(([ord, ev]) => {
-        setOrders(normalizeOrdersListPayload(ord))
+        setOrders(Array.isArray(ord) ? ord : normalizeOrdersListPayload(ord))
         setEvents(Array.isArray(ev) ? ev : normalizeOrdersListPayload(ev))
       })
       .finally(() => setLoading(false))
@@ -254,31 +335,28 @@ export default function Orders() {
     setDetailSource("none")
     setDetailFetchHint(null)
 
-    /** دليل المنظمة: GET /api/orders/organization/{orderId} فقط (لا يُستخدم GET /orders/{id} لحساب المنظمة) */
-    const path = `/orders/organization/${selectedOrder}`
+    /** Booking v2: GET /api/bookings/organization/{bookingId} (تراجع تلقائي إلى orders v1) */
+    const bookingId = selectedOrder
 
     ;(async () => {
       let apiPayload = null
       const attemptNotes = []
       try {
-        const { data } = await api.get(path)
-        apiPayload = normalizeOrderDetailPayload(data)
-        if (apiPayload == null && data != null && typeof data === "object" && !Array.isArray(data)) {
-          const keys = Object.keys(data)
-          if (keys.length > 0) apiPayload = data
+        apiPayload = await fetchOrganizationBookingDetail(bookingId)
+        if (apiPayload == null) {
+          attemptNotes.push(`/bookings/organization/${bookingId} → 200 لكن لا جسماً صالحاً للحجز`)
         }
-        if (apiPayload == null) attemptNotes.push(`${path} → 200 لكن لا جسماً صالحاً للطلب`)
       } catch (e) {
         const st = e.response?.status
         const hint =
           st === 403
             ? "403 (غالباً بدون مطالبة orgId في JWT أو ممنوع)"
             : st === 404
-              ? "404 (مسار غير منشور أو الطلب لا يخص المنظمة)"
+              ? "404 (مسار غير منشور أو الحجز لا يخص المنظمة)"
               : st != null
                 ? String(st)
                 : "خطأ شبكة أو الخادم لا يستجيب"
-        attemptNotes.push(`${path} → ${hint}`)
+        attemptNotes.push(`/bookings/organization/${bookingId} → ${hint}`)
       }
       if (cancelled) return
       const merged = mergeOrderDetailFromSources(apiPayload, row)
@@ -333,23 +411,8 @@ export default function Orders() {
     }
   }
 
-  const statusLabelAr = (raw) => {
-    const s = String(raw ?? "").toLowerCase()
-    if (s.includes("paid") || s.includes("complete")) return "مدفوع / مكتمل"
-    if (s.includes("pending")) return "قيد الانتظار"
-    if (s.includes("cancel")) return "ملغى"
-    return raw ? String(raw) : "—"
-  }
-
-  const statusBadgeClass = (raw) => {
-    const s = String(raw ?? "").toLowerCase()
-    if (s.includes("paid") || s.includes("complete")) {
-      return "border-emerald-200/90 bg-emerald-50 text-emerald-900 ring-emerald-600/15"
-    }
-    if (s.includes("pending")) return "border-amber-200/90 bg-amber-50 text-amber-900 ring-amber-600/12"
-    if (s.includes("cancel")) return "border-rose-200/90 bg-rose-50 text-rose-900 ring-rose-600/12"
-    return "border-slate-200/80 bg-slate-100 text-slate-800 ring-slate-300/60"
-  }
+  const statusLabelAr = bookingStatusLabelAr
+  const statusBadgeClass = bookingStatusBadgeClass
 
   if (loading) {
     return <DashboardPageSkeleton />
@@ -364,6 +427,16 @@ export default function Orders() {
       <div className="pointer-events-none absolute -right-24 top-40 size-56 rounded-full bg-teal-400/10 blur-3xl" aria-hidden />
 
       <div className="relative space-y-8">
+      {eventFilter && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-sky-950">
+          <span>
+            عرض حجوزات: <strong>{filterEventTitle}</strong> ({formatCountEn(visibleOrders.length)} حجز)
+          </span>
+          <Button type="button" variant="outline" size="sm" className="h-9 rounded-xl" asChild>
+            <Link to="/bookings">كل الحجوزات</Link>
+          </Button>
+        </div>
+      )}
       <header className="org-card-surface flex flex-col gap-4 rounded-3xl p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between sm:p-6">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-emerald-600/10 px-2.5 py-1 text-emerald-900 ring-1 ring-emerald-600/15">
@@ -372,7 +445,7 @@ export default function Orders() {
           </div>
           <h1 className="org-heading text-2xl font-bold tracking-tight sm:text-3xl">المبيعات والحجوزات</h1>
           <p className="org-text-secondary mt-2 max-w-xl text-sm leading-relaxed">
-            قائمة الطلبات المرتبطة برحلاتك؛ اختر صفاً للتفاصيل، واطلع على أسعار أنواع التذاكر من العمود المجاور.
+            قائمة الحجوزات المرتبطة برحلاتك (Booking v2)؛ اختر صفاً للتفاصيل بما فيها عمولة المنصة ومرجع الدفع.
           </p>
         </div>
         {listStats.count > 0 && (
@@ -380,7 +453,7 @@ export default function Orders() {
             <span className="inline-flex items-center gap-2.5 rounded-2xl border border-slate-200/85 bg-white/90 px-4 py-2.5 text-sm shadow-sm ring-1 ring-slate-900/[0.04]">
               <Receipt className="size-4 text-emerald-700" aria-hidden />
               <span className="org-stat-value text-xl font-bold">{formatCountEn(listStats.count)}</span>
-              <span className="org-text-secondary text-sm">طلب</span>
+              <span className="org-text-secondary text-sm">حجز</span>
             </span>
             {listStats.totalAmount != null && (
               <span className="inline-flex flex-col gap-0.5 rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 to-teal-50/50 px-4 py-2.5 shadow-sm ring-1 ring-emerald-900/[0.07] sm:min-w-[200px] sm:items-end">
@@ -404,9 +477,9 @@ export default function Orders() {
                     <ShoppingCart className="size-5" strokeWidth={1.75} aria-hidden />
                   </span>
                   <div>
-                    <CardTitle className="org-heading text-lg font-semibold">قائمة الطلبات</CardTitle>
+                    <CardTitle className="org-heading text-lg font-semibold">قائمة الحجوزات</CardTitle>
                     <CardDescription className="text-[13px] text-slate-600">
-                      المبالغ بالدينار عند التوفر. التمرير العمودي للقوائم الطويلة.
+                      المبالغ بالدينار. الحالة: بانتظار الدفع · مؤكد · منتهي · ملغى.
                     </CardDescription>
                   </div>
                 </div>
@@ -424,12 +497,14 @@ export default function Orders() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              {orders.length === 0 ? (
+              {visibleOrders.length === 0 ? (
                 <div className="px-4 py-16 text-center sm:px-6">
                   <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-emerald-50 ring-1 ring-emerald-100">
                     <ShoppingCart className="size-8 text-emerald-600/50" strokeWidth={1.25} aria-hidden />
                   </div>
-                  <p className="mt-4 text-base font-semibold text-slate-800">لا توجد طلبات بعد</p>
+                  <p className="mt-4 text-base font-semibold text-slate-800">
+                    {eventFilter ? "لا توجد حجوزات لهذه الرحلة" : "لا توجد حجوزات بعد"}
+                  </p>
                   <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
                     عند اكتمال الحجوزات ستظهر هنا مع ربط الرحلة والمبلغ والحالة.
                   </p>
@@ -440,13 +515,13 @@ export default function Orders() {
                     <thead className="sticky top-0 z-10">
                       <tr className="border-b border-emerald-900/10 bg-gradient-to-b from-slate-50/98 to-slate-50/90 shadow-[0_1px_0_0_rgb(16_185_129/0.08)] backdrop-blur-sm">
                         <th className="w-24 px-3 py-3.5 text-right text-xs font-semibold text-slate-600 sm:px-4">
-                          رقم الطلب
+                          رقم الحجز
                         </th>
                         <th className="min-w-[240px] max-w-md px-3 py-3.5 text-right text-xs font-semibold text-slate-600 sm:px-4">
                           الرحلة
                         </th>
                         <th className="w-36 px-3 py-3.5 text-end text-xs font-semibold tabular-nums text-slate-600 sm:px-4">
-                          المبلغ
+                          صافي الوكالة
                         </th>
                         <th className="w-36 px-3 py-3.5 text-right text-xs font-semibold text-slate-600 sm:px-4">
                           الحالة
@@ -457,11 +532,13 @@ export default function Orders() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100/90">
-                      {orders.map((o, idx) => {
+                      {visibleOrders.map((o, idx) => {
                         const rid = orderRowIdFromPayload(o)
                         const key = rid != null ? String(rid) : `row-${idx}`
                         const eventTitle = eventTitleFromOrderPayload(o, eventsById)
-                        const amt = orderAmountFromPayload(o)
+                        const amt = organizationAmountFromPayload(o) ?? orderAmountFromPayload(o)
+                        const fee = platformFeeFromPayload(o)
+                        const payRef = paymentReferenceFromPayload(o)
                         const st = orderStatusFromPayload(o)
                         const created = orderCreatedFromPayload(o)
                         const selected = selectedOrder != null && String(selectedOrder) === String(rid)
@@ -487,7 +564,12 @@ export default function Orders() {
                             ].join(" ")}
                           >
                             <td className="px-3 py-3 font-mono text-sm font-semibold tabular-nums text-slate-900 sm:px-4">
-                              #{rid ?? "—"}
+                              <span className="block">#{rid ?? "—"}</span>
+                              {payRef ? (
+                                <span className="mt-0.5 block max-w-[7rem] truncate font-sans text-[10px] font-normal text-slate-500" dir="ltr" title={payRef}>
+                                  {payRef}
+                                </span>
+                              ) : null}
                             </td>
                             <td className="min-w-0 max-w-md px-3 py-3 text-slate-800 sm:px-4">
                               <span className="block whitespace-normal break-words font-medium leading-snug">
@@ -495,7 +577,12 @@ export default function Orders() {
                               </span>
                             </td>
                             <td className="whitespace-nowrap px-3 py-3 text-end font-semibold tabular-nums text-slate-900 sm:px-4">
-                              {amt != null ? formatMoneyEn(Number(amt), "") : "—"}
+                              <span className="block">{amt != null ? formatMoneyEn(Number(amt), "") : "—"}</span>
+                              {fee != null && (
+                                <span className="block text-[10px] font-normal text-amber-800/90">
+                                  عمولة: {formatMoneyEn(Number(fee), "")}
+                                </span>
+                              )}
                             </td>
                             <td className="px-3 py-3 sm:px-4">
                               {st ? (
@@ -535,14 +622,14 @@ export default function Orders() {
                     <Receipt className="size-4" strokeWidth={1.75} aria-hidden />
                   </span>
                   <div>
-                    <CardTitle className="org-heading text-base font-semibold">تفاصيل الطلب</CardTitle>
+                    <CardTitle className="org-heading text-base font-semibold">تفاصيل الحجز</CardTitle>
                     <CardDescription className="text-[13px]">
                       {selectedOrder ? (
                         <>
-                          الطلب <span className="font-mono font-semibold text-slate-800">#{selectedOrder}</span>
+                          الحجز <span className="font-mono font-semibold text-slate-800">#{selectedOrder}</span>
                         </>
                       ) : (
-                        "اختر طلباً من الجدول أعلاه"
+                        "اختر حجزاً من الجدول أعلاه"
                       )}
                     </CardDescription>
                   </div>
@@ -551,7 +638,7 @@ export default function Orders() {
               <CardContent className="max-h-[min(70vh,640px)] flex-1 overflow-y-auto pt-4">
                 {!selectedOrder ? (
                   <div className="rounded-xl border border-dashed border-slate-200/90 bg-slate-50/50 px-4 py-10 text-center">
-                    <p className="text-sm font-medium text-slate-700">لم يُحدد طلب</p>
+                    <p className="text-sm font-medium text-slate-700">لم يُحدد حجز</p>
                     <p className="mt-1 text-sm text-slate-500">اضغط على صف في الجدول لعرض البيانات الكاملة.</p>
                   </div>
                 ) : detailLoading ? (
@@ -563,10 +650,10 @@ export default function Orders() {
                         <div className="min-w-0 space-y-1.5">
                           <p className="text-[12px] leading-relaxed text-amber-950/90">
                             <span className="font-semibold">هذا تنبيه وليس عطلاً في الواجهة:</span> لم يُرجع الخادم
-                            تفاصيل الطلب عبر مساري المنظمة/العام، لذلك يُعرض فقط ما في <strong>صف الجدول</strong>. السبب
-                            الشائع: مسار المنظمة الوحيد المعتمد{" "}
-                            <code className="rounded bg-amber-100/90 px-1 text-[11px]">GET /api/orders/organization/:id</code> غير
-                            منشور أو يعيد خطأ، أو التوكن بلا مطالبة <code className="text-[11px]">orgId</code>، أو الطلب لا يخص المنظمة.
+                            تفاصيل الحجز عبر مسار المنظمة، لذلك يُعرض فقط ما في <strong>صف الجدول</strong>. السبب
+                            الشائع: مسار{" "}
+                            <code className="rounded bg-amber-100/90 px-1 text-[11px]">GET /api/bookings/organization/:id</code> غير
+                            منشور أو يعيد خطأ، أو التوكن بلا مطالبة <code className="text-[11px]">orgId</code>، أو الحجز لا يخص المنظمة.
                           </p>
                           {detailFetchHint ? (
                             <p

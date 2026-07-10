@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { NavLink, useNavigate, useLocation } from "react-router-dom"
+import { NavLink, useNavigate, useLocation, Link } from "react-router-dom"
 import { AnimatedOutlet } from "./motion"
 import SupportChat from "./chat/SupportChat"
 import { useAuth } from "../context/AuthContext"
@@ -35,6 +35,9 @@ import {
   BarChart3,
   Megaphone,
   LifeBuoy,
+  Video,
+  MessageSquare,
+  UserCircle,
   Menu,
   X,
 } from "lucide-react"
@@ -48,6 +51,9 @@ const adminNavItems = [
   { to: "/admin/reports", icon: BarChart3, label: "التقارير", end: false },
   { to: "/admin/finance", icon: Landmark, label: "المالية", end: false },
   { to: "/admin/payouts", icon: Wallet, label: "طلبات السحب", end: false },
+  { to: "/admin/videos", icon: Video, label: "الفيديوهات", end: false },
+  { to: "/admin/posts", icon: MessageSquare, label: "البوستات", end: false },
+  { to: "/admin/customers", icon: UserCircle, label: "العملاء", end: false },
   { to: "/admin/notifications", icon: Megaphone, label: "الإشعارات", end: false },
   { to: "/admin/support", icon: LifeBuoy, label: "الدعم الفني", end: false },
 ]
@@ -56,11 +62,15 @@ const routeTitles = {
   "/admin": "لوحة التحكم",
   "/admin/partners": "طلبات الشركاء",
   "/admin/organizations": "المنظمات",
+  "/admin/profile": "ملفي",
   "/admin/events": "الفعاليات",
   "/admin/categories": "التصنيفات",
   "/admin/reports": "التقارير",
   "/admin/finance": "المالية",
   "/admin/payouts": "طلبات السحب",
+  "/admin/videos": "الفيديوهات",
+  "/admin/posts": "البوستات",
+  "/admin/customers": "العملاء",
   "/admin/notifications": "الإشعارات",
   "/admin/support": "الدعم الفني",
 }
@@ -69,6 +79,9 @@ function getPageTitle(pathname) {
   if (pathname === "/admin" || pathname === "/admin/") return "لوحة التحكم"
   if (/^\/admin\/events\/.+/.test(pathname) && pathname !== "/admin/events") {
     return "تفاصيل الفعالية"
+  }
+  if (/^\/admin\/organizations\/[^/]+\/accounts/.test(pathname)) {
+    return "حسابات الشركة"
   }
   for (const [path, title] of Object.entries(routeTitles)) {
     if (path !== "/admin" && pathname.startsWith(path)) return title
@@ -87,8 +100,8 @@ export default function AdminLayout() {
     setSidebarOpen(false)
   }, [pathname])
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout({ redirect: false })
     navigate("/admin/login")
   }
 
@@ -149,6 +162,12 @@ export default function AdminLayout() {
             <DropdownMenuContent align="end" className="admin-glass w-56 rounded-xl">
               <DropdownMenuLabel className="font-normal text-slate-500">الحساب</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="cursor-pointer rounded-lg">
+                <Link to="/admin/profile">
+                  <User className="ms-2 size-4" />
+                  ملفي
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleLogout}
                 className="cursor-pointer rounded-lg text-destructive focus:text-destructive"

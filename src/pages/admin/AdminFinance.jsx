@@ -225,6 +225,9 @@ export default function AdminFinance() {
                 </div>
                 <span className="text-sm font-semibold text-brand-navy">محفظة المنصة</span>
               </div>
+              <p className="mb-4 text-[11px] leading-relaxed text-slate-500">
+                تتراكم عمولات الحجوزات المؤكدة (<span className="font-mono text-[10px]">platformFee</span>) هنا بعد دفع العميل من التطبيق.
+              </p>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-sky-100/80 bg-sky-50/40 px-4 py-3.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">الرصيد</p>
@@ -356,6 +359,9 @@ export default function AdminFinance() {
               <Building2 className="size-5 text-sky-700" strokeWidth={1.75} />
             </div>
             <CardTitle className="text-base font-semibold text-brand-navy">ملخص الشركات</CardTitle>
+            <p className="w-full text-[11px] leading-relaxed text-slate-500 sm:mr-auto sm:max-w-xl">
+              عمولة «المبيعات» تُجمَع من حقل <span className="font-mono text-[10px]">platformFee</span> في الحجوزات المؤكدة — يجب أن تتوافق مع محفظة المنصة.
+            </p>
           </CardHeader>
           <CardContent className="p-0">
             {overviewSorted.length === 0 ? (

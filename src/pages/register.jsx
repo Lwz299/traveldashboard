@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate, Link, NavLink } from "react-router-dom"
 import api from "../api/api"
+import { useAuth } from "../context/AuthContext"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
 import { Label } from "../components/ui/label"
@@ -9,6 +10,7 @@ import { Plane, UserPlus } from "lucide-react"
 
 export default function Register() {
   const navigate = useNavigate()
+  const { loginFromRegisterResponse } = useAuth()
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -34,13 +36,19 @@ export default function Register() {
         email: form.email,
         password: form.password,
         displayName: form.displayName || null,
-        organizationId: form.organizationId ? parseInt(form.organizationId, 10) : 0,
+        organizationId: form.organizationId ? parseInt(form.organizationId, 10) : null,
         organizationName: form.organizationName || null,
         organizationDescription: form.organizationDescription || null,
         organizationEmail: form.organizationEmail || null,
         organizationPhone: form.organizationPhone || null,
       }
-      await api.post("/organization-accounts/register", payload)
+      const { data } = await api.post("/organization-accounts/register", payload)
+      const token = data?.token ?? data?.accessToken
+      if (token) {
+        await loginFromRegisterResponse(data)
+        navigate("/", { replace: true })
+        return
+      }
       setSuccess("تم إنشاء الحساب بنجاح!")
       setTimeout(() => navigate("/login"), 2000)
     } catch (err) {

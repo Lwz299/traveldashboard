@@ -213,7 +213,7 @@ export async function fetchOrganizationPayoutHistory() {
  * الاستجابة: `{ totalCount, skip, take, items }` (camelCase). ربط أعمدة الواجهة:
  * الفعالية ← `eventTitle` | نوع التذكرة ← `ticketTypeName` | الإجمالي ← `grossPerTicket` |
  * النسبة ← `commissionPercent` أو `commissionRate` | عمولة المنصة ← `platformFeePerTicket` | صافي المنظمة ← `organizerNetPerTicket` |
- * طلب/تاريخ ← `orderId`, `createdAt`.
+ * طلب/تاريخ ← `orderId` (قيمة bookingId فعلياً في v2), `createdAt`.
  *
  * حقول إضافية: `usedFallbackUnitPrice`, `ticketId`, `orderItemId`, `qrCode`. يدعم التطبيع أسماء PascalCase وتداخلاً (`orderItem` / `ticketType`).
  * يُعرض عمود «نوع التذكرة» من `ticketTypeName`؛ يملأه الخادم غالباً من `Ticket.TicketType` ثم `OrderItem.TicketType` إن لزم.

@@ -10,6 +10,8 @@ export function normalizeOrdersListPayload(raw) {
   if (Array.isArray(raw.Items)) return raw.Items
   if (Array.isArray(raw.orders)) return raw.orders
   if (Array.isArray(raw.Orders)) return raw.Orders
+  if (Array.isArray(raw.bookings)) return raw.bookings
+  if (Array.isArray(raw.Bookings)) return raw.Bookings
   if (Array.isArray(raw.data)) return raw.data
   if (Array.isArray(raw.Data)) return raw.Data
   if (Array.isArray(raw.value)) return raw.value
@@ -28,6 +30,8 @@ export function normalizeOrderDetailPayload(raw) {
     return null
   }
   const inner =
+    raw.booking ??
+    raw.Booking ??
     raw.order ??
     raw.Order ??
     (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data) ? raw.data : null) ??

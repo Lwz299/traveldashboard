@@ -58,7 +58,7 @@ export default function Field() {
     }
   }, [])
 
-  const verifyTicket = async (code, eventId) => {
+  const processScan = async (code, eventId) => {
     if (loading) return
     if (lastScannedRef.current === code) return
     lastScannedRef.current = code
@@ -66,18 +66,32 @@ export default function Field() {
     setLoading(true)
     setError("")
     try {
-      const url = eventId
-        ? `/tickets/verify/${encodeURIComponent(code)}?eventId=${encodeURIComponent(eventId)}`
-        : `/tickets/verify/${encodeURIComponent(code)}`
-
-      const { data } = await api.post(url)
-      setResult({
-        success: true,
-        message: data?.message,
-        checkedInAtUtc: data?.checkedInAtUtc,
-        eventTitle: data?.eventTitle,
-        code: data?.code,
-      })
+      let data
+      if (eventId) {
+        const res = await api.post(
+          `/tickets/check-in/${encodeURIComponent(eventId)}/${encodeURIComponent(code)}`
+        )
+        data = res.data
+        setResult({
+          success: true,
+          mode: "check-in",
+          message: data?.message ?? "تم تسجيل الحضور بنجاح",
+          checkedInAtUtc: data?.checkedInAtUtc ?? data?.checkedInAt,
+          eventTitle: data?.eventTitle,
+          code: data?.code ?? code,
+        })
+      } else {
+        const res = await api.post(`/tickets/verify/${encodeURIComponent(code)}`)
+        data = res.data
+        setResult({
+          success: true,
+          mode: "verify",
+          message: data?.message ?? "التذكرة صالحة",
+          checkedInAtUtc: data?.checkedInAtUtc,
+          eventTitle: data?.eventTitle,
+          code: data?.code ?? code,
+        })
+      }
       stopCamera()
     } catch (err) {
       const payload = err.response?.data
@@ -91,7 +105,9 @@ export default function Field() {
       })
     } finally {
       setLoading(false)
-      setTimeout(() => { lastScannedRef.current = "" }, 2000)
+      setTimeout(() => {
+        lastScannedRef.current = ""
+      }, 2000)
     }
   }
 
@@ -134,7 +150,7 @@ export default function Field() {
           qrbox: { width: 250, height: 250 },
         },
         (decodedText) => {
-          verifyTicket(decodedText, selectedEventRef.current)
+          processScan(decodedText, selectedEventRef.current)
         },
         () => {}
       )
@@ -147,7 +163,7 @@ export default function Field() {
 
   const handleManualSubmit = (e) => {
     e.preventDefault()
-    if (qrCode.trim()) verifyTicket(qrCode.trim(), selectedEventRef.current)
+    if (qrCode.trim()) processScan(qrCode.trim(), selectedEventRef.current)
   }
 
   useEffect(() => {
@@ -167,10 +183,12 @@ export default function Field() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Keyboard className="w-5 h-5" />
-              اختيار رحلة للتحقق (اختياري)
+              اختيار الرحلة (مطلوب لـ check-in)
             </CardTitle>
             <CardDescription>
-              عند اختيار رحلة سيتم إرسال `eventId` مع الطلب للتأكد من أن التذكرة تخص نفس الفعالية.
+              مع رحلة محددة: تسجيل حضور عبر{" "}
+              <code className="text-xs">POST /tickets/check-in/&#123;eventId&#125;/&#123;qr&#125;</code>. بدون
+              رحلة: تحقق سريع فقط دون تسجيل استخدام.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex gap-3 flex-wrap items-end">
@@ -182,7 +200,7 @@ export default function Field() {
                 onChange={(e) => setSelectedEventId(e.target.value)}
                 disabled={eventsLoading}
               >
-                <option value="">بدون تحديد (تحقق عام)</option>
+                <option value="">بدون تحديد (تحقق فقط)</option>
                 {events.map((ev) => (
                   <option key={ev.id} value={ev.id}>
                     {ev.title ?? ev.name ?? "بدون عنوان"}
@@ -296,7 +314,10 @@ export default function Field() {
               )}
               <div className="flex-1">
                 <p className={`font-semibold text-lg ${result.success ? "text-green-800" : "text-destructive"}`}>
-                  {result.success ? result.message || "تم التحقق بنجاح" : "فشل التحقق"}
+                  {result.success
+                    ? result.message ||
+                      (result.mode === "check-in" ? "تم تسجيل الحضور" : "التذكرة صالحة")
+                    : "فشل العملية"}
                 </p>
                 {result.success ? (
                   <>

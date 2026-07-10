@@ -45,7 +45,7 @@ export function normalizeWalletTransaction(row) {
     date: parseDate(dateRaw),
     meta: {
       rawType: String(rawType),
-      orderId: firstDefined(row, ["orderId", "OrderId"]),
+      orderId: firstDefined(row, ["orderId", "OrderId", "bookingId", "BookingId"]),
       commissionRate: firstDefined(row, ["commissionRate", "CommissionRate"]),
     },
   }

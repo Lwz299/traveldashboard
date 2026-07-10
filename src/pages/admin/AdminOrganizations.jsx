@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import api from "../../api/api"
+import { fetchSuperAdminOrganizations, updateOrganization } from "../../api/superAdmin"
+import { Link } from "react-router-dom"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
@@ -17,6 +19,7 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  UsersRound,
 } from "lucide-react"
 import { MotionSection, StaggerItem, StaggerList } from "../../components/motion"
 import { AdminCardsSkeleton } from "../../components/motion/AdminSkeletons"
@@ -196,8 +199,7 @@ export default function AdminOrganizations() {
     setLoading(true)
     setError("")
     try {
-      const { data } = await api.get("/organizations")
-      const list = unwrapOrganizationsList(data)
+      const list = await fetchSuperAdminOrganizations()
       setOrganizations(list.map(normalizeOrganizationRecord))
     } catch (err) {
       setError(err.response?.data?.message ?? "تعذر تحميل المنظمات")
@@ -284,7 +286,7 @@ export default function AdminOrganizations() {
     setSaving(true)
     setError("")
     try {
-      await api.put(`/organizations/${editingId}`, {
+      await updateOrganization(editingId, {
         name: editForm.name || undefined,
         description: editForm.description || undefined,
         email: editForm.email || undefined,
@@ -479,6 +481,18 @@ export default function AdminOrganizations() {
                                   <Pencil className="size-3.5" />
                                   <span className="ms-1.5">تعديل</span>
                                 </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-lg"
+                                  asChild
+                                >
+                                  <Link to={`/admin/organizations/${id}/accounts`}>
+                                    <UsersRound className="size-3.5" />
+                                    <span className="ms-1.5">حسابات</span>
+                                  </Link>
+                                </Button>
                               </div>
                             </td>
                           </tr>
@@ -497,8 +511,11 @@ export default function AdminOrganizations() {
           {selectedOrgId != null && (
             <MotionSection delay={0.02} aria-label="تفاصيل منظمة">
               <Card className={adminCardClass}>
-                <CardHeader className="pb-2">
+                <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
                   <CardTitle className="text-base font-semibold text-brand-navy">تفاصيل المنظمة #{selectedOrgId}</CardTitle>
+                  <Button type="button" variant="outline" size="sm" className="rounded-lg" asChild>
+                    <Link to={`/admin/organizations/${selectedOrgId}/accounts`}>حسابات الموظفين</Link>
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   {detailsLoading ? (

@@ -6,6 +6,7 @@ import Login from "./pages/Login"
 import BecomePartner from "./pages/BecomePartner"
 import Dashboard from "./pages/Dashboard"
 import Events from "./pages/Events"
+import CreateEvent from "./pages/CreateEvent"
 import EventDetail from "./pages/EventDetail"
 import Agenda from "./pages/Agenda"
 import Attendees from "./pages/Attendees"
@@ -19,7 +20,8 @@ import OrgUsers from "./pages/OrgUsers"
 import SupportTickets from "./pages/SupportTickets"
 import SupportTicketDetail from "./pages/SupportTicketDetail"
 import AdminLogin from "./pages/admin/AdminLogin"
-import AdminDashboard from "./pages/admin/AdminDashboard"
+import AdminDashboard from "./pages/admin/AdminDashboard";
+
 import AdminPartnerApplications from "./pages/admin/AdminPartnerApplications"
 import AdminPayouts from "./pages/admin/AdminPayouts"
 import AdminOrganizations from "./pages/admin/AdminOrganizations"
@@ -31,6 +33,12 @@ import AdminBroadcastNotifications from "./pages/admin/AdminBroadcastNotificatio
 import AdminSupportTickets from "./pages/admin/AdminSupportTickets"
 import AdminSupportTicketDetail from "./pages/admin/AdminSupportTicketDetail"
 import AdminFinance from "./pages/admin/AdminFinance"
+import Videos from "./pages/Videos"
+import AdminVideos from "./pages/admin/AdminVideos"
+import AdminPosts from "./pages/admin/AdminPosts"
+import AdminCustomers from "./pages/admin/AdminCustomers"
+import AdminProfile from "./pages/admin/AdminProfile"
+import AdminOrgAccounts from "./pages/admin/AdminOrgAccounts"
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -83,6 +91,8 @@ function AppRoutes() {
         <Route index element={<AdminDashboard />} />
         <Route path="partners" element={<AdminPartnerApplications />} />
         <Route path="organizations" element={<AdminOrganizations />} />
+        <Route path="organizations/:orgId/accounts" element={<AdminOrgAccounts />} />
+        <Route path="profile" element={<AdminProfile />} />
         <Route path="events" element={<AdminEvents />} />
         <Route path="events/:eventId" element={<AdminEventDetail />} />
         <Route path="categories" element={<AdminCategories />} />
@@ -90,6 +100,9 @@ function AppRoutes() {
         <Route path="finance" element={<AdminFinance />} />
         <Route path="payouts" element={<AdminPayouts />} />
         <Route path="notifications" element={<AdminBroadcastNotifications />} />
+        <Route path="videos" element={<AdminVideos />} />
+        <Route path="posts" element={<AdminPosts />} />
+        <Route path="customers" element={<AdminCustomers />} />
         <Route path="support" element={<AdminSupportTickets />} />
         <Route path="support/:ticketId" element={<AdminSupportTicketDetail />} />
       </Route>
@@ -103,8 +116,11 @@ function AppRoutes() {
       >
         <Route index element={<Dashboard />} />
         <Route path="events" element={<Events />} />
+        <Route path="events/create" element={<CreateEvent />} />
         <Route path="events/:eventId" element={<EventDetail />} />
+        <Route path="videos" element={<Videos />} />
         <Route path="orders" element={<Orders />} />
+        <Route path="bookings" element={<Orders />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="attendees" element={<Attendees />} />
         <Route path="field" element={<Field />} />

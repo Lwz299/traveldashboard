@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import api from "../api/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { Label } from "../components/ui/label"
@@ -47,6 +48,8 @@ const KPI_ACCENTS = [
 ]
 
 export default function Reports() {
+  const [searchParams] = useSearchParams()
+  const eventFromUrl = searchParams.get("eventId") ?? ""
   const [events, setEvents] = useState([])
   const [summary, setSummary] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
@@ -84,6 +87,12 @@ export default function Reports() {
       setLoading(false)
     })
   }, [])
+
+  useEffect(() => {
+    if (!eventFromUrl || events.length === 0) return
+    const exists = events.some((ev) => String(ev.id) === String(eventFromUrl))
+    if (exists) setSelectedEvent(String(eventFromUrl))
+  }, [eventFromUrl, events])
 
   useEffect(() => {
     if (!selectedEvent) {

@@ -96,7 +96,7 @@ export default function FinancialActivityTable({ rows, emptyLabel = "لا توج
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     {row.meta?.orderId != null && (
                       <span className="text-sm text-slate-700">
-                        طلب <span className="font-medium tabular-nums">#{row.meta.orderId}</span>
+                        حجز <span className="font-medium tabular-nums">#{row.meta.orderId}</span>
                       </span>
                     )}
                     {row.meta?.commissionRate != null && row.meta.commissionRate !== "" && (

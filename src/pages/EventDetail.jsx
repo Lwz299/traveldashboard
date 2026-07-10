@@ -29,6 +29,10 @@ import {
   XCircle,
   Save,
   Loader2,
+  Video,
+  PauseCircle,
+  PlayCircle,
+  CheckCircle2,
 } from "lucide-react"
 import { formatDateEn, formatDateTimeEn, formatCountEn, formatMoneyEn } from "../utils/formatEn"
 import {
@@ -53,6 +57,11 @@ import { orgCardClass, orgBtnPrimary } from "../lib/org-ui"
 import { orgApiErrorMessage } from "../utils/orgApiError"
 import { parseEventNotAvailableError } from "../utils/apiErrorCodes"
 import { resolveApiAssetUrl } from "../utils/apiAssetUrl"
+import { patchEventStatus, patchEventSuspendSales } from "../api/events"
+import {
+  fetchEventFinancialAudit,
+  formatFinancialAuditConfirmMessage,
+} from "../api/eventFinancialAudit"
 
 function toDatetimeLocalValue(raw) {
   if (raw == null || raw === "") return ""
@@ -359,7 +368,21 @@ export default function EventDetail() {
 
   const updateStatus = async (status) => {
     try {
-      await api.patch(`/events/${eventId}/status`, { status })
+      await patchEventStatus(eventId, status)
+      await reloadEvent()
+    } catch (err) {
+      alert(orgApiErrorMessage(err))
+    }
+  }
+
+  const toggleSuspendSales = async () => {
+    const suspended = Boolean(event?.isSalesSuspended ?? event?.IsSalesSuspended)
+    const msg = suspended
+      ? "إعادة تفعيل بيع التذاكر؟"
+      : "إيقاف بيع التذاكر مؤقتاً؟ الرحلة تبقى ظاهرة لكن لا حجز جديد."
+    if (!confirm(msg)) return
+    try {
+      await patchEventSuspendSales(eventId, !suspended)
       await reloadEvent()
     } catch (err) {
       alert(orgApiErrorMessage(err))
@@ -443,7 +466,17 @@ export default function EventDetail() {
 
   const deleteTicketType = async (row) => {
     const id = ticketTypeId(row)
-    if (id == null || !confirm("حذف نوع التذكرة هذا؟")) return
+    if (id == null) return
+    let warn = ""
+    try {
+      const audit = await fetchEventFinancialAudit(eventId)
+      if (audit?.issuedTicketCount > 0) {
+        warn = `\n\nتنبيه: ${audit.issuedTicketCount} تذكرة مصدرة. ${formatFinancialAuditConfirmMessage(audit)}`
+      }
+    } catch {
+      /* optional */
+    }
+    if (!confirm(`حذف نوع التذكرة هذا؟${warn}`)) return
     try {
       await api.delete(`/ticket-types/${id}`)
       await loadTicketTypes()
@@ -568,7 +601,40 @@ export default function EventDetail() {
               نشر
             </Button>
           )}
-          {!softDeleted && st !== "Draft" && st !== "Cancelled" && (
+          {!softDeleted && st === "Published" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-10 rounded-xl"
+              onClick={toggleSuspendSales}
+            >
+              {salesSuspended ? (
+                <>
+                  <PlayCircle className="size-4" />
+                  تفعيل البيع
+                </>
+              ) : (
+                <>
+                  <PauseCircle className="size-4" />
+                  إيقاف البيع
+                </>
+              )}
+            </Button>
+          )}
+          {!softDeleted && st === "Published" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-10 rounded-xl"
+              onClick={() => updateStatus("Completed")}
+            >
+              <CheckCircle2 className="size-4" />
+              إنهاء الرحلة
+            </Button>
+          )}
+          {!softDeleted && st !== "Draft" && st !== "Cancelled" && st !== "Completed" && (
             <Button
               type="button"
               variant="outline"
@@ -652,6 +718,21 @@ export default function EventDetail() {
               {bookings != null && bookingsSourceHint && (
                 <p className="mt-2 text-xs leading-relaxed text-slate-500">{bookingsSourceHint}</p>
               )}
+              {perfStats?.ticketsSold != null &&
+                bookings != null &&
+                Number(perfStats.ticketsSold) !== Number(bookings) && (
+                  <p className="mt-2 text-xs text-amber-800">
+                    تقرير الأداء: {formatCountEn(perfStats.ticketsSold)} تذكرة — قارن مع الحجوزات المؤكدة.
+                  </p>
+                )}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg text-xs" asChild>
+                  <Link to={`/bookings?eventId=${eventId}`}>حجوزات الرحلة</Link>
+                </Button>
+                <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg text-xs" asChild>
+                  <Link to={`/reports?eventId=${eventId}`}>تقرير الأداء</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
           <Card className={`${orgCardClass} border-emerald-900/10`}>
@@ -932,6 +1013,28 @@ export default function EventDetail() {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+      </MotionSection>
+
+      <MotionSection delay={0.055}>
+        <Card className={`${orgCardClass} border-emerald-900/10`}>
+          <CardHeader className="border-b border-emerald-900/8 pb-4">
+            <CardTitle className="org-heading flex items-center gap-2 text-lg">
+              <Video className="size-5 text-emerald-700" />
+              فيديوهات الرحلة
+            </CardTitle>
+            <p className="text-sm text-slate-600">
+              أنشئ فيديو ترويجي مرتبطاً بهذه الرحلة (targetType=Trip) ثم انشره ليظهر في تطبيق العميل.
+            </p>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-3 pt-6">
+            <Button type="button" className={`h-11 rounded-xl ${orgBtnPrimary}`} asChild>
+              <Link to={`/videos?trip=${eventId}`}>إنشاء فيديو لهذه الرحلة</Link>
+            </Button>
+            <Button type="button" variant="outline" className="h-11 rounded-xl" asChild>
+              <Link to="/videos">كل فيديوهات الشركة</Link>
+            </Button>
           </CardContent>
         </Card>
       </MotionSection>

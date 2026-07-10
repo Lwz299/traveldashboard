@@ -18,7 +18,7 @@ export default function AdminCategories() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [modal, setModal] = useState(null) // 'create' | { id }
-  const [form, setForm] = useState({ name: "", description: "", iconUrl: "" })
+  const [form, setForm] = useState({ name: "", description: "", iconUrl: "", isActive: true })
   const [saving, setSaving] = useState(false)
 
   const fetchCategories = async () => {
@@ -40,7 +40,7 @@ export default function AdminCategories() {
 
   const openCreate = () => {
     setModal("create")
-    setForm({ name: "", description: "", iconUrl: "" })
+    setForm({ name: "", description: "", iconUrl: "", isActive: true })
   }
 
   const openEdit = (cat) => {
@@ -49,12 +49,13 @@ export default function AdminCategories() {
       name: cat.name ?? "",
       description: cat.description ?? "",
       iconUrl: getCategoryIconName(cat),
+      isActive: cat.isActive ?? cat.IsActive ?? true,
     })
   }
 
   const closeModal = () => {
     setModal(null)
-    setForm({ name: "", description: "", iconUrl: "" })
+    setForm({ name: "", description: "", iconUrl: "", isActive: true })
   }
 
   const handleSubmit = async (e) => {
@@ -66,6 +67,7 @@ export default function AdminCategories() {
         name: form.name.trim(),
         description: form.description.trim(),
         iconUrl: form.iconUrl.trim() || null,
+        isActive: Boolean(form.isActive),
       }
       if (modal === "create") {
         await api.post("/super-admin/categories", payload)
@@ -164,6 +166,15 @@ export default function AdminCategories() {
                   يُحفَظ في الـ API كحقل <span className="font-mono">iconUrl</span> (اسم الأيقونة في Lucide).
                 </p>
               </div>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  className="size-4 rounded border-slate-300"
+                  checked={Boolean(form.isActive)}
+                  onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
+                />
+                فئة نشطة (تظهر في تطبيق العميل)
+              </label>
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={saving} className={adminBtnPrimary}>
                   {saving ? "جاري الحفظ..." : "حفظ"}

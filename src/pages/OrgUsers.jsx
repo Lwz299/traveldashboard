@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { getOrganizationUsers, inviteUser, removeUser } from "../api/organizationAccounts"
 import { useAuth } from "../context/AuthContext"
+import { useOrgPermissions } from "../hooks/useOrgPermissions"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
@@ -40,7 +41,9 @@ const inviteTypeBtn = (active) =>
 
 export default function OrgUsers() {
   const { user } = useAuth()
-  const isOrgAdmin = user?.orgRole === "OrgAdmin"
+  const { can } = useOrgPermissions()
+  const canInvite = can(["CanInviteUsers"])
+  const canRemove = user?.orgRole === "OrgAdmin"
 
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -146,7 +149,7 @@ export default function OrgUsers() {
         </div>
       )}
 
-      {isOrgAdmin && (
+      {canInvite && (
         <MotionSection delay={0.04} aria-label="دعوة مستخدم">
           <MotionSurface>
             <Card className="overflow-hidden rounded-2xl border-slate-200/80 bg-white/90 shadow-sm ring-1 ring-slate-900/[0.04] transition-shadow duration-200 hover:shadow-md">
@@ -260,20 +263,20 @@ export default function OrgUsers() {
         </MotionSection>
       )}
 
-      {!isOrgAdmin && (
+      {!canInvite && (
         <div
           className="flex items-start gap-3 rounded-2xl border border-sky-200/90 bg-sky-50/50 px-4 py-3 text-sm text-sky-950"
           role="status"
         >
           <Info className="mt-0.5 size-5 shrink-0 text-sky-700" aria-hidden />
           <p className="leading-relaxed">
-            عرض القائمة متاح لك كموظف؛ <strong className="font-semibold text-slate-800">دعوة مستخدمين جدد</strong> من صلاحية
-            مدير المنظمة فقط.
+            عرض القائمة متاح لك؛ <strong className="font-semibold text-slate-800">دعوة مستخدمين جدد</strong> تتطلب
+            صلاحية <span className="font-mono text-xs">CanInviteUsers</span> أو دور مدير المنظمة.
           </p>
         </div>
       )}
 
-      <MotionSection delay={isOrgAdmin ? 0.06 : 0.04} aria-label="قائمة المستخدمين">
+      <MotionSection delay={canInvite ? 0.06 : 0.04} aria-label="قائمة المستخدمين">
         <MotionSurface>
           <Card className={`${orgCardClassSubtle} overflow-hidden`}>
             <CardHeader className="border-b border-emerald-900/[0.06] bg-gradient-to-b from-white/90 to-emerald-50/20 px-4 py-4 sm:px-6 sm:py-5">
@@ -316,6 +319,7 @@ export default function OrgUsers() {
                 <ul className="divide-y divide-slate-100/90">
                   {users.map((u) => {
                     const id = u.applicationUserId ?? u.id
+                    const memberRole = u.role ?? u.orgRole
                     const isSelf = Number(id) === Number(user?.accountId)
                     return (
                       <li
@@ -326,12 +330,12 @@ export default function OrgUsers() {
                           <div
                             className={[
                               "flex size-11 shrink-0 items-center justify-center rounded-2xl ring-1",
-                              u.orgRole === "OrgAdmin"
+                              memberRole === "OrgAdmin"
                                 ? "bg-gradient-to-br from-amber-100/90 to-amber-50 text-amber-800 ring-amber-200/80"
                                 : "bg-gradient-to-br from-slate-100 to-white text-slate-600 ring-slate-200/80",
                             ].join(" ")}
                           >
-                            {u.orgRole === "OrgAdmin" ? (
+                            {memberRole === "OrgAdmin" ? (
                               <Shield className="size-5" strokeWidth={1.75} aria-hidden />
                             ) : (
                               <User className="size-5" strokeWidth={1.75} aria-hidden />
@@ -349,12 +353,12 @@ export default function OrgUsers() {
                             <p className="truncate text-sm text-slate-500">{u.email}</p>
                           </div>
                           <span
-                            className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${roleBadgeClass(u.orgRole)}`}
+                            className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${roleBadgeClass(memberRole)}`}
                           >
-                            {ROLE_LABELS[u.orgRole] ?? u.orgRole ?? "—"}
+                            {ROLE_LABELS[memberRole] ?? memberRole ?? "—"}
                           </span>
                         </div>
-                        {!isSelf && isOrgAdmin && (
+                        {!isSelf && canRemove && (
                           <Button
                             variant="outline"
                             size="sm"

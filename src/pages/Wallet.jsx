@@ -583,6 +583,9 @@ export default function Wallet() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5 px-4 py-5 sm:px-6 sm:py-6">
+              <p className="text-[11px] leading-relaxed text-slate-500">
+                يُحدَّث الرصيد تلقائياً عند تأكيد حجوزات العملاء من التطبيق (دفع ناجح) — لا حاجة لإجراء يدوي من الوكالة.
+              </p>
               {balanceLoadError && (
                 <div
                   className="flex items-start gap-2 rounded-xl border border-amber-200/90 bg-amber-50/70 px-3 py-2.5 text-[11px] leading-snug text-amber-950"
@@ -793,7 +796,7 @@ export default function Wallet() {
                   type="search"
                   value={teSearch}
                   onChange={(e) => setTeSearch(e.target.value)}
-                  placeholder="بحث نصي: فعالية، نوع، معرّف تذكرة، طلب، بند…"
+                  placeholder="بحث نصي: فعالية، نوع، معرّف تذكرة، حجز، بند…"
                   className={[
                     "h-11 w-full rounded-2xl border-emerald-900/10 bg-white text-sm shadow-sm ring-1 ring-slate-900/[0.04] transition-[box-shadow,border-color]",
                     "pr-11 placeholder:text-slate-400 focus-visible:border-emerald-600/35 focus-visible:ring-2 focus-visible:ring-emerald-600/20",
@@ -884,7 +887,7 @@ export default function Wallet() {
                   <tbody>
                     {teDisplayRows.map((row, idx) => {
                       const grossTitle = [
-                        row.usedFallbackUnitPrice && "السعر من unitPrice في بند الطلب لأن priceAtPurchase كان صفراً",
+                        row.usedFallbackUnitPrice && "السعر من unitPrice في بند الحجز لأن priceAtPurchase كان صفراً",
                         row.inferredGross && "استُنبَط الإجمالي من صافي المنظمة ونسبة العمولة، أو من عمومة المنصة + الصافي",
                       ]
                         .filter(Boolean)
@@ -943,7 +946,7 @@ export default function Wallet() {
                               )}
                               {row.orderId != null && (
                                 <span className="tabular-nums">
-                                  طلب <span className="font-medium text-slate-600">{formatCountEn(row.orderId)}</span>
+                                  حجز <span className="font-medium text-slate-600">{formatCountEn(row.orderId)}</span>
                                 </span>
                               )}
                               {row.createdAt && (

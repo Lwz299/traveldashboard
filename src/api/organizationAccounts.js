@@ -3,9 +3,9 @@ import api from "./api"
 /**
  * إدارة مستخدمي المنظمة
  * @see الوظيفة | Method | Endpoint | الصلاحية
- * دعوة مستخدم | POST | /organization-accounts/invite | OrgAdmin فقط
- * عرض قائمة المستخدمين | GET | /organization-accounts/organization/users | OrgAdmin + OrgStaff
- * إزالة مستخدم | DELETE | /organization-accounts/users/{applicationUserId} | OrgAdmin فقط
+ * دعوة مستخدم | POST | /organization-accounts/invite | CanInviteUsers / OrgAdmin
+ * عرض قائمة المستخدمين | GET | /organization-accounts/organization/users | Organization
+ * إزالة مستخدم | DELETE | /organization-accounts/users/{applicationUserId} | OrgAdmin
  */
 
 /** GET /api/organization-accounts/organization/users - عرض قائمة المستخدمين (OrgAdmin + OrgStaff) */
