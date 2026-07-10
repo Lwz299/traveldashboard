@@ -34,7 +34,9 @@ export default function Login() {
       if (status === 401 || status === 400) {
         setError(msg || "بريد أو كلمة مرور غير صحيحة. قد تكون المنظمة قيد المراجعة أو غير معتمدة.")
       } else if (!err.response) {
-        setError("تعذر الاتصال بالخادم. تحقق من الاتصال بالإنترنت أو من إعداد VITE_API_URL")
+        setError(
+          "تعذر الاتصال بالخادم (CORS أو شبكة). على Vercel استخدم VITE_API_URL=/api مع vercel.json — أو فعّل CORS للدومين على الباكند."
+        )
       } else {
         setError(msg || `خطأ ${status || ""}`)
       }
