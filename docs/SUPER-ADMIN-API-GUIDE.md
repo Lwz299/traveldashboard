@@ -12,7 +12,7 @@
 
 | العنصر | القيمة |
 |--------|--------|
-| **Base URL (الواجهة الافتراضية في المشروع)** | `https://trave-gdb0b6ccfecpbahv.israelcentral-01.azurewebsites.net/api` (أو `VITE_API_URL`) |
+| **Base URL (الواجهة الافتراضية في المشروع)** | `https://api.altadumntest.com/api` (أو `VITE_API_URL` / `VITE_API_BASE_URL`) |
 | **تسجيل الدخول** | `POST /api/super-admin/login` |
 | **دور JWT** | `SuperAdmin` |
 | **Header** | `Authorization: Bearer <token>` |

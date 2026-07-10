@@ -3,7 +3,7 @@
 ## عنوان الخادم
 
 - المتغير: **`VITE_API_URL`**
-- الافتراضي في الكود: `https://trave-gdb0b6ccfecpbahv.israelcentral-01.azurewebsites.net/api` (انظر `src/config/apiEndpoint.js`)
+- الافتراضي في الكود: `https://api.altadumntest.com/api` (انظر `src/config/apiEndpoint.js`)
 - عميل axios (`src/api/api.js`) يضيف `baseURL`؛ المسارات في الكود تُكتب **بدون** تكرار `/api` إذا كان `baseURL` ينتهي بـ `/api`.
 
 ### أمثلة URL كاملة

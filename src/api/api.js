@@ -7,6 +7,10 @@ import axios from "axios"
 import { getApiBaseUrl } from "../config/apiEndpoint.js"
 import { applyRefreshedTokens, AUTH_DEVICE_ID, clearAuthSession } from "../utils/authSession.js"
 
+/** عنوان REST الحالي — يُستخدم من وحدات `src/api/*.js` عبر مثيل axios المشترك */
+export { getApiBaseUrl } from "../config/apiEndpoint.js"
+export { getApiOrigin, DEFAULT_API_BASE_URL, PRODUCTION_API_HOST } from "../config/apiEndpoint.js"
+
 // نفس الخادم للمنظمة وللسوبر أدمن — انظر `getApiBaseUrl()` و `VITE_API_URL` / `VITE_API_BASE_URL`.
 const api = axios.create({
   baseURL: getApiBaseUrl(),

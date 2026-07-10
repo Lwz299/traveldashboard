@@ -11,7 +11,7 @@
 | العنصر | القيمة |
 |--------|--------|
 | **Base URL (تطوير محلي)** | حسب `VITE_API_URL` أو الافتراضي في `src/config/apiEndpoint.js` |
-| **Base URL (إنتاج — هذا المشروع)** | `https://trave-gdb0b6ccfecpbahv.israelcentral-01.azurewebsites.net/api` |
+| **Base URL (إنتاج — هذا المشروع)** | `https://api.altadumntest.com/api` |
 | **تسجيل الدخول** | `POST /api/organization-accounts/login` |
 | **دور JWT** | `Organization` |
 | **Claims** | `orgId` (إلزامي)، `orgRole`: `OrgAdmin` \| `OrgStaff` |
